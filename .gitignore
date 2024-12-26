@@ -1,0 +1,31 @@
+# System files
+.DS_Store
+
+# IDE files
+.vscode/
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Testing and coverage
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Configuration files
+mypy.ini
+
+# Drafts
+draft/
