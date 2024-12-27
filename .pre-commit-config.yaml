@@ -43,8 +43,8 @@ repos:
     hooks:
     - id: pytest
       name: pytest
-      entry: pytest tests
-      language: system
+      entry: env/bin/python -m pytest tests
+      language: python
       types: [python]
       pass_filenames: false
       always_run: true
