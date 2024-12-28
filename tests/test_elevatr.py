@@ -1,11 +1,14 @@
 import os
 import tempfile
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 import rasterio
+import requests  # type: ignore
 from rasterio.transform import from_origin
 
+from elevatr.downloader import _get_aws_terrain
 from elevatr.raster_operations import _merge_rasters
 from elevatr.utils import _get_tile_xy, _lonlat_to_tilenum
 
@@ -88,3 +91,91 @@ def test_merge_rasters(create_test_rasters):
     assert meta["crs"].to_string() == "EPSG:3857"  # Check CRS
     assert mosaic[0, 0, 0] == 1  # Check the first pixel value
     assert mosaic[0, 0, 5] == 2  # Check the transition between rasters
+
+
+####
+
+
+@pytest.fixture
+def bbx():
+    """Bounding box coordinates for testing."""
+    return {
+        "xmin": -123.1,
+        "xmax": -122.9,
+        "ymin": 37.7,
+        "ymax": 37.8,
+    }
+
+
+@pytest.fixture
+def zoom():
+    """Zoom level for testing."""
+    return 0
+
+
+def test_get_aws_terrain(bbx, zoom, tmp_path):
+    """Test downloading AWS terrain data."""
+    cache_folder = str(tmp_path)  # Use a temporary directory for storing tiles
+
+    # Call the actual function
+    result = _get_aws_terrain(bbx, zoom, cache_folder, use_cache=False, verbose=True)
+
+    # Assertions
+    assert len(result) > 0  # Ensure files were downloaded
+    for filepath in result:
+        assert os.path.exists(filepath)  # Ensure files exist
+        assert filepath.endswith(".tif")  # Ensure they are .tif files
+
+
+def test_get_aws_terrain_with_cache(bbx, zoom, tmp_path):
+    """Test downloading AWS terrain data with cache."""
+    cache_folder = str(tmp_path)  # Use a temporary directory
+
+    # Simulate a cached file
+    existing_tile_filename = os.path.join(cache_folder, "geotiff_0_0_0.tif")
+    os.makedirs(os.path.dirname(existing_tile_filename), exist_ok=True)
+    with open(existing_tile_filename, "wb") as f:
+        f.write(b"cached_tile_data")
+
+    # Call the function
+    result = _get_aws_terrain(bbx, zoom, cache_folder, use_cache=True, verbose=True)
+
+    # Assertions
+    assert len(result) > 0  # Ensure files are returned
+    assert existing_tile_filename in result  # Ensure the cached file is included
+
+    # Ensure new files are downloaded (if applicable)
+    for filepath in result:
+        assert os.path.exists(filepath)
+        assert filepath.endswith(".tif")
+
+
+def test_get_aws_terrain_invalid_file_type(bbx, zoom, tmp_path):
+    """Test handling of invalid file types in AWS terrain data download."""
+    cache_folder = str(tmp_path)
+
+    # Simulate an HTTP response with an incorrect MIME type
+    with patch("requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.headers = {"Content-Type": "text/html"}  # Incorrect MIME type
+        mock_response.iter_content.return_value = iter([b"some data"])
+        mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
+
+        # Ensure the function raises ValueError
+        with pytest.raises(ValueError, match="Invalid file type for URL"):
+            _get_aws_terrain(bbx, zoom, cache_folder, use_cache=False, verbose=False)
+
+
+def test_get_aws_terrain_request_exception(bbx, zoom, tmp_path):
+    """Test handling of network exceptions in AWS terrain data download."""
+    cache_folder = str(tmp_path)
+
+    # Simulate a network exception with RequestException
+    with patch("requests.get") as mock_get:
+        mock_get.side_effect = requests.RequestException("Network error")
+
+        # Ensure the function raises RuntimeError
+        with pytest.raises(RuntimeError, match="Failed to download"):
+            _get_aws_terrain(bbx, zoom, cache_folder, use_cache=False, verbose=False)
