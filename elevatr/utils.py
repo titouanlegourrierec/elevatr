@@ -1,7 +1,7 @@
 import math
-from itertools import product
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 
 
@@ -131,8 +131,10 @@ def _get_tile_xy(bbx: dict, zoom: int) -> pd.DataFrame:
         ymin, ymax = ymax, ymin
 
     # Generate tile coordinates
+    x_tiles = np.arange(xmin, xmax + 1)
+    y_tiles = np.arange(ymin, ymax + 1)
     tiles = pd.DataFrame(
-        product(range(xmin, xmax + 1), range(ymin, ymax + 1)),
+        np.array(np.meshgrid(x_tiles, y_tiles)).T.reshape(-1, 2),
         columns=["tile_x", "tile_y"],
     )
 
