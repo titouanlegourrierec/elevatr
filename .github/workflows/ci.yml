@@ -54,7 +54,7 @@ jobs:
       - name: Run coverage
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'
         run: |
-          coverage run -m pytest -n auto -s --maxfail=1 --disable-warnings
+          coverage run -m pytest -s --maxfail=1 --disable-warnings
           coverage xml
 
       - name: Upload coverage to Codecov

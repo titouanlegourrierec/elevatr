@@ -1,0 +1,9 @@
+coverage:
+  ignore:
+    - tests/*
+    - docs/*
+  notify:
+    email:
+      recipients:
+        - titouanlegourrierec@icloud.com
+      subject: "Elevatr coverage report"
