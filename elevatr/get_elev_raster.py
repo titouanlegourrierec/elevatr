@@ -2,9 +2,8 @@ import os
 import shutil
 from typing import Optional, Tuple
 
-import numpy as np
-
 from .downloader import _get_aws_terrain
+from .raster import Raster
 from .raster_operations import _merge_rasters
 
 
@@ -15,7 +14,7 @@ def get_elev_raster(
     use_cache: Optional[bool] = True,
     delete_cache: Optional[bool] = True,
     verbose: Optional[bool] = True,
-) -> Tuple[np.ndarray, dict]:
+) -> Raster:
     """
     Get elevation raster for a bounding box. The raster is downloaded from AWS Terrain Tiles.
 
@@ -95,4 +94,4 @@ def get_elev_raster(
     if delete_cache:
         shutil.rmtree(cache_folder)
 
-    return mosaic, meta
+    return Raster(mosaic, meta)

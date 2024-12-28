@@ -210,7 +210,7 @@ def test_get_elev_raster_valid_inputs(mock_bbox, mock_zoom, mock_cache_folder):
         mock_get_aws_terrain.return_value = ["tile1.tif", "tile2.tif"]
         mock_merge_rasters.return_value = (np.zeros((1, 2, 2)), {"crs": "EPSG:3857"})
 
-        raster, meta = get_elev_raster(
+        raster = get_elev_raster(
             locations=mock_bbox,
             zoom=mock_zoom,
             cache_folder=mock_cache_folder,
@@ -219,7 +219,10 @@ def test_get_elev_raster_valid_inputs(mock_bbox, mock_zoom, mock_cache_folder):
             verbose=False,
         )
 
-        assert isinstance(raster, np.ndarray), "Raster should be a numpy array."
+        data = raster.data
+        meta = raster.meta
+
+        assert isinstance(data, np.ndarray), "Raster should be a numpy array."
         assert isinstance(meta, dict), "Metadata should be a dictionary."
         assert "crs" in meta, "Metadata should contain CRS."
 
