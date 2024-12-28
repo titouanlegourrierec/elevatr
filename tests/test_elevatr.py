@@ -1,5 +1,12 @@
-import pytest
+import os
+import tempfile
 
+import numpy as np
+import pytest
+import rasterio
+from rasterio.transform import from_origin
+
+from elevatr.raster_operations import _merge_rasters
 from elevatr.utils import _get_tile_xy, _lonlat_to_tilenum
 
 
@@ -40,3 +47,44 @@ def test_get_tile_xy_zoom_levels(bbx, zoom, max_tile_x, max_tile_y):
     assert (
         result["tile_y"] <= max_tile_y
     ).all(), f"Tile y-coordinates exceed max for zoom {zoom}"
+
+
+@pytest.fixture
+def create_test_rasters():
+    """Fixture to create temporary raster files for testing."""
+    rasters = []
+    temp_dir = tempfile.TemporaryDirectory()
+
+    for i in range(2):
+        data = np.ones((1, 5, 5), dtype=np.float32) * (i + 1)  # Create 5x5 raster data
+        transform = from_origin(i * 5, 0, 1, 1)
+
+        raster_path = os.path.join(temp_dir.name, f"test_raster_{i}.tif")
+        with rasterio.open(
+            raster_path,
+            "w",
+            driver="GTiff",
+            height=5,
+            width=5,
+            count=1,
+            dtype="float32",
+            crs="EPSG:3857",
+            transform=transform,
+        ) as dst:
+            dst.write(data)
+
+        rasters.append(raster_path)
+
+    yield rasters
+    temp_dir.cleanup()
+
+
+def test_merge_rasters(create_test_rasters):
+    """Test the merge_rasters function."""
+    raster_list = create_test_rasters
+    mosaic, meta = _merge_rasters(raster_list)
+
+    assert mosaic.shape == (1, 5, 10)  # Check mosaic shape
+    assert meta["crs"].to_string() == "EPSG:3857"  # Check CRS
+    assert mosaic[0, 0, 0] == 1  # Check the first pixel value
+    assert mosaic[0, 0, 5] == 2  # Check the transition between rasters

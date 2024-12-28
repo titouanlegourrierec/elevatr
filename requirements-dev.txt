@@ -2,6 +2,7 @@
 black
 codecov
 coverage
+docformatter
 flake8
 mypy
 pre-commit
