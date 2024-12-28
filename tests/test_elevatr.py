@@ -3,6 +3,7 @@ import shutil
 import tempfile
 from unittest.mock import MagicMock, patch
 
+import matplotlib
 import numpy as np
 import pytest
 import rasterio
@@ -11,8 +12,11 @@ from rasterio.transform import from_origin
 
 from elevatr.downloader import _get_aws_terrain
 from elevatr.get_elev_raster import get_elev_raster
+from elevatr.raster import Raster
 from elevatr.raster_operations import _merge_rasters
 from elevatr.utils import _get_tile_xy, _lonlat_to_tilenum
+
+matplotlib.use("Agg")  # Use a non-interactive backend for testing
 
 
 @pytest.mark.parametrize(
@@ -296,3 +300,116 @@ def test_get_elev_raster_no_cache_folder(mock_bbox, mock_zoom):
         assert os.path.exists(cache_folder), "Cache folder should be created."
 
         shutil.rmtree(cache_folder)
+
+
+def test_raster_post_init():
+    """Test the initialization of the Raster class."""
+    data = np.random.rand(1, 2, 2)
+    meta = {
+        "crs": "EPSG:4326",
+        "height": 2,
+        "width": 2,
+        "dtype": "float32",
+        "nodata": -9999,
+        "transform": rasterio.transform.from_origin(0, 0, 1, 1),
+    }
+    raster = Raster(data=data, meta=meta)
+
+    assert raster.crs == "EPSG:4326"
+    assert raster.height == 2
+    assert raster.width == 2
+    assert raster.dtype == "float32"
+    assert raster.nodata == -9999
+    assert raster.transform == meta["transform"]
+
+
+def test_raster_show():
+    """Test the show method of the Raster class."""
+    data = np.random.rand(1, 2, 2)
+    meta = {"transform": rasterio.transform.from_origin(0, 0, 1, 1)}
+    raster = Raster(data=data, meta=meta)
+
+    with patch("matplotlib.pyplot.show") as mock_show:
+        raster.show(cmap="viridis", clip_zero=True)
+        mock_show.assert_called_once()
+
+
+def test_raster_to_numpy():
+    """Test the to_numpy method of the Raster class."""
+    data = np.random.rand(1, 2, 2)
+    meta = {}
+    raster = Raster(data=data, meta=meta)
+
+    np_array = raster.to_numpy()
+    assert isinstance(np_array, np.ndarray)
+    assert np.array_equal(np_array, data[0])
+
+
+def test_raster_to_tif():
+    """Test the to_tif method of the Raster class."""
+    data = np.random.rand(1, 2, 2).astype(np.float32)
+    meta = {
+        "driver": "GTiff",
+        "height": 2,
+        "width": 2,
+        "count": 1,
+        "dtype": "float32",
+        "crs": "EPSG:4326",
+        "transform": rasterio.transform.from_origin(1, 0, 1, 1),
+    }
+    raster = Raster(data=data, meta=meta)
+
+    with tempfile.NamedTemporaryFile(suffix=".tif", delete=True) as temp_tif:
+        raster.to_tif(temp_tif.name)
+        assert os.path.exists(temp_tif.name)
+
+        with rasterio.open(temp_tif.name) as src:
+            read_data = src.read(1)
+            assert np.array_equal(read_data, data[0])
+            assert src.crs.to_string() == "EPSG:4326"
+            assert src.meta["dtype"] == "float32"
+
+
+@pytest.fixture
+def mock_raster_data():
+    """Fixture to provide mock raster data and metadata."""
+    data = np.random.rand(1, 2, 2).astype(np.float32)
+    meta = {
+        "driver": "GTiff",
+        "height": 2,
+        "width": 2,
+        "count": 1,
+        "dtype": "float32",
+        "crs": "EPSG:3857",
+        "transform": rasterio.transform.from_origin(1, 0, 1, 1),
+    }
+    return data, meta
+
+
+def test_raster_save_and_load(mock_raster_data):
+    """Test saving and loading raster data to and from a GeoTIFF file."""
+    data, meta = mock_raster_data
+    raster = Raster(data=data, meta=meta)
+
+    with tempfile.NamedTemporaryFile(suffix=".tif", delete=True) as temp_tif:
+        raster.to_tif(temp_tif.name)
+
+        with rasterio.open(temp_tif.name) as src:
+            loaded_data = src.read(1)
+            assert np.array_equal(loaded_data, raster.to_numpy())
+            assert src.meta["crs"] == raster.meta["crs"]
+
+
+def test_raster_show_clip_zero():
+    """Test the show method with clip_zero=True."""
+    data = np.random.randn(1, 2, 2)  # Random data including negative values
+    meta = {"transform": rasterio.transform.from_origin(0, 0, 1, 1)}
+    raster = Raster(data=data, meta=meta)
+
+    with patch("matplotlib.pyplot.show") as mock_show:
+        raster.show(cmap="viridis", clip_zero=True)
+        clipped_data = np.where(data[0] < 0, np.nan, data[0])
+        assert np.array_equal(
+            raster.to_numpy()[raster.to_numpy() >= 0], clipped_data[clipped_data >= 0]
+        )
+        mock_show.assert_called_once()
