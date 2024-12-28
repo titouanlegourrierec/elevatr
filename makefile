@@ -36,7 +36,7 @@ clean:
 
 # Run tests
 test:
-	$(TEST) tests
+	$(ENV)/bin/pytest -n auto tests
 	@echo "🧪 Tests passed 🧪"
 
 coverage:
@@ -47,7 +47,7 @@ coverage:
 
 # Pre commit
 pre-commit:
-	pre-commit run --all-files --config .pre-commit-config.yaml
+	$(ENV)/bin/pre-commit run --all-files --config .pre-commit-config.yaml
 	@echo "🔍 Pre-commit hooks passed 🔍"
 
 # lint code
