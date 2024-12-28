@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 from unittest.mock import MagicMock, patch
 
@@ -9,6 +10,7 @@ import requests  # type: ignore
 from rasterio.transform import from_origin
 
 from elevatr.downloader import _get_aws_terrain
+from elevatr.get_elev_raster import get_elev_raster
 from elevatr.raster_operations import _merge_rasters
 from elevatr.utils import _get_tile_xy, _lonlat_to_tilenum
 
@@ -59,16 +61,16 @@ def create_test_rasters():
     temp_dir = tempfile.TemporaryDirectory()
 
     for i in range(2):
-        data = np.ones((1, 5, 5), dtype=np.float32) * (i + 1)  # Create 5x5 raster data
-        transform = from_origin(i * 5, 0, 1, 1)
+        data = np.ones((1, 2, 2), dtype=np.float32) * (i + 1)  # Create 2x2 raster data
+        transform = from_origin(10 + i * 2, 10, 1, 1)
 
         raster_path = os.path.join(temp_dir.name, f"test_raster_{i}.tif")
         with rasterio.open(
             raster_path,
             "w",
             driver="GTiff",
-            height=5,
-            width=5,
+            height=2,
+            width=2,
             count=1,
             dtype="float32",
             crs="EPSG:3857",
@@ -87,13 +89,10 @@ def test_merge_rasters(create_test_rasters):
     raster_list = create_test_rasters
     mosaic, meta = _merge_rasters(raster_list)
 
-    assert mosaic.shape == (1, 5, 10)  # Check mosaic shape
+    assert mosaic.shape == (1, 2, 4)  # Check mosaic shape
     assert meta["crs"].to_string() == "EPSG:3857"  # Check CRS
     assert mosaic[0, 0, 0] == 1  # Check the first pixel value
-    assert mosaic[0, 0, 5] == 2  # Check the transition between rasters
-
-
-####
+    assert mosaic[0, 0, 2] == 2  # Check the transition between rasters
 
 
 @pytest.fixture
@@ -179,3 +178,121 @@ def test_get_aws_terrain_request_exception(bbx, zoom, tmp_path):
         # Ensure the function raises RuntimeError
         with pytest.raises(RuntimeError, match="Failed to download"):
             _get_aws_terrain(bbx, zoom, cache_folder, use_cache=False, verbose=False)
+
+
+@pytest.fixture
+def mock_bbox():
+    """Fixture to provide a valid mock bounding box."""
+    return (-122.5, 37.5, -122.0, 38.0)
+
+
+@pytest.fixture
+def mock_zoom():
+    """Fixture to provide a valid zoom level."""
+    return 8
+
+
+@pytest.fixture
+def mock_cache_folder(tmp_path):
+    """Fixture to create a temporary cache folder."""
+    return str(tmp_path / "cache")
+
+
+def test_get_elev_raster_valid_inputs(mock_bbox, mock_zoom, mock_cache_folder):
+    """Test get_elev_raster with valid inputs."""
+    with patch("elevatr.downloader._get_aws_terrain") as mock_get_aws_terrain, patch(
+        "elevatr.raster_operations._merge_rasters"
+    ) as mock_merge_rasters:
+        mock_get_aws_terrain.return_value = ["tile1.tif", "tile2.tif"]
+        mock_merge_rasters.return_value = (np.zeros((1, 2, 2)), {"crs": "EPSG:3857"})
+
+        raster, meta = get_elev_raster(
+            locations=mock_bbox,
+            zoom=mock_zoom,
+            cache_folder=mock_cache_folder,
+            use_cache=True,
+            delete_cache=False,
+            verbose=False,
+        )
+
+        assert isinstance(raster, np.ndarray), "Raster should be a numpy array."
+        assert isinstance(meta, dict), "Metadata should be a dictionary."
+        assert "crs" in meta, "Metadata should contain CRS."
+
+
+def test_get_elev_raster_delete_cache(mock_bbox, mock_zoom, mock_cache_folder):
+    """Test get_elev_raster with cache deletion."""
+    with patch("shutil.rmtree") as mock_rmtree, patch(
+        "elevatr.downloader._get_aws_terrain"
+    ) as mock_get_aws_terrain, patch(
+        "elevatr.raster_operations._merge_rasters"
+    ) as mock_merge_rasters:
+        mock_get_aws_terrain.return_value = []
+        mock_merge_rasters.return_value = (np.zeros((1, 2, 2)), {"crs": "EPSG:3857"})
+
+        get_elev_raster(
+            locations=mock_bbox,
+            zoom=mock_zoom,
+            cache_folder=mock_cache_folder,
+            use_cache=True,
+            delete_cache=True,
+            verbose=False,
+        )
+
+        mock_rmtree.assert_called_once_with(mock_cache_folder)
+
+
+def test_get_elev_raster_invalid_locations():
+    """Test get_elev_raster with invalid locations."""
+    invalid_locations = "invalid"
+
+    with pytest.raises(AssertionError, match="locations must be a tuple of length 4"):
+        get_elev_raster(
+            locations=invalid_locations,
+            zoom=8,
+            cache_folder="./cache",
+            use_cache=True,
+            delete_cache=True,
+            verbose=False,
+        )
+
+
+def test_get_elev_raster_invalid_zoom(mock_bbox):
+    """Test get_elev_raster with invalid zoom level."""
+    invalid_zoom = 20  # Out of valid range
+
+    with pytest.raises(
+        AssertionError, match="zoom must be an integer between 0 and 14"
+    ):
+        get_elev_raster(
+            locations=mock_bbox,
+            zoom=invalid_zoom,
+            cache_folder="./cache",
+            use_cache=True,
+            delete_cache=True,
+            verbose=False,
+        )
+
+
+def test_get_elev_raster_no_cache_folder(mock_bbox, mock_zoom):
+    """Test get_elev_raster when the cache folder does not exist."""
+    cache_folder = "./non_existing_cache"
+
+    with patch("elevatr.downloader._get_aws_terrain") as mock_get_aws_terrain, patch(
+        "elevatr.raster_operations._merge_rasters"
+    ) as mock_merge_rasters:
+        mock_get_aws_terrain.return_value = ["tile1.tif", "tile2.tif"]
+        mock_merge_rasters.return_value = (np.zeros((1, 2, 2)), {"crs": "EPSG:3857"})
+
+        get_elev_raster(
+            locations=mock_bbox,
+            zoom=mock_zoom,
+            cache_folder=cache_folder,
+            use_cache=True,
+            delete_cache=False,
+            verbose=True,
+        )
+
+        assert os.path.exists(cache_folder), "Cache folder should be created."
+
+        shutil.rmtree(cache_folder)
