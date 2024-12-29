@@ -362,8 +362,11 @@ def test_raster_to_tif():
     }
     raster = Raster(data=data, meta=meta)
 
-    with tempfile.NamedTemporaryFile(suffix=".tif", delete=True) as temp_tif:
+    with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as temp_tif:
+        temp_tif.close()
         raster.to_tif(temp_tif.name)
+        assert os.path.exists(temp_tif.name)
+
         assert os.path.exists(temp_tif.name)
 
         with rasterio.open(temp_tif.name) as src:
@@ -371,6 +374,8 @@ def test_raster_to_tif():
             assert np.array_equal(read_data, data[0])
             assert src.crs.to_string() == "EPSG:4326"
             assert src.meta["dtype"] == "float32"
+
+    os.remove(temp_tif.name)
 
 
 @pytest.fixture
