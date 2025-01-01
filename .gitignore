@@ -29,3 +29,6 @@ mypy.ini
 
 # Drafts
 draft/
+
+# Documentation
+docs/build/

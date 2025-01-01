@@ -4,7 +4,10 @@ codecov
 coverage
 docformatter
 flake8
+furo
 mypy
 pre-commit
 pytest
 pytest-xdist
+sphinx
+sphinx-autodoc-typehints

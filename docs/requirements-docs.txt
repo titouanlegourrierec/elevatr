@@ -1,0 +1,10 @@
+furo
+matplotlib
+numpy
+pandas
+pyproj
+rasterio
+requests
+sphinx
+sphinx-autodoc-typehints
+tqdm
