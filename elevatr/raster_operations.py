@@ -1,10 +1,13 @@
 from contextlib import ExitStack
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pyproj
 import rasterio
 from rasterio.merge import merge
+from rasterio.windows import from_bounds
+
+from .utils import convert_wgs84_bbox_to_web_mercator
 
 
 def _merge_rasters(raster_list: List[str]) -> Tuple[np.ndarray, dict]:
@@ -47,3 +50,46 @@ def _merge_rasters(raster_list: List[str]) -> Tuple[np.ndarray, dict]:
             )
 
     return mosaic, meta
+
+
+def _clip_bbx(
+    data: np.ndarray,
+    meta: Dict[str, Any],
+    bbx: Dict[str, float],
+) -> Tuple[np.ndarray, Dict[str, Any]]:
+    """
+    Clip a raster to a bounding box.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The raster data as a NumPy array.
+    meta : dict
+        Metadata for the raster, including driver, CRS, height, width, and transform.
+    bbx : dict
+        The bounding box to clip the raster to, in WGS84 coordinates.
+
+    Returns
+    ----------
+    data : np.ndarray
+        The clipped raster data as a NumPy array.
+    meta : dict
+        Metadata for the clipped raster, including driver, CRS, height, width, and transform.
+    """
+
+    with rasterio.io.MemoryFile() as memfile:
+        with memfile.open(**meta) as dataset:
+            dataset.write(data)
+
+            web_mercator_bbox = convert_wgs84_bbox_to_web_mercator(bbx)
+
+            # Calculate the window to clip
+            window = from_bounds(*web_mercator_bbox, transform=dataset.transform)
+
+            # Read the data in this window
+            data = dataset.read(window=window)
+            transform = dataset.window_transform(window)
+
+    meta.update(transform=transform, height=data.shape[1], width=data.shape[2])
+
+    return data, meta

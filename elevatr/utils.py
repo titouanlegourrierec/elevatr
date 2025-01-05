@@ -1,8 +1,9 @@
 import math
-from typing import Tuple
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
+from pyproj import CRS, Transformer
 
 
 def _lonlat_to_tilenum(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, int]:
@@ -144,3 +145,48 @@ def _get_tile_xy(bbx: dict, zoom: int) -> pd.DataFrame:
         tiles = tiles[(tiles["tile_x"] < 1) & (tiles["tile_y"] < 1)]
 
     return tiles
+
+
+def convert_wgs84_bbox_to_web_mercator(
+    bbx: Dict[str, float]
+) -> Tuple[float, float, float, float]:
+    """Convert a bounding box from WGS84 to Web Mercator (EPSG:3857).
+
+    Parameters
+    ----------
+    bbx : dict
+        A dictionary representing the bounding box with keys 'xmin', 'xmax', 'ymin', and 'ymax'.
+        - 'xmin' : float
+            Minimum longitude of the bounding box.
+        - 'xmax' : float
+            Maximum longitude of the bounding box.
+        - 'ymin' : float
+            Minimum latitude of the bounding box.
+        - 'ymax' : float
+            Maximum latitude of the bounding box.
+
+    Returns
+    -------
+    tuple
+        A tuple representing the bounding box with coordinates in Web Mercator (EPSG:3857).
+        The tuple is in the format (min_x, min_y, max_x, max_y).
+
+    Examples
+    --------
+    >>> wgs84_bbox_to_3857((-5.14, 41.33, 9.56, 51.09))
+    (-572182.1826774261, 5061139.118730165, 1064214.3319836953, 6637229.1478071)
+    """
+
+    bbx: Tuple[float] = (bbx["xmin"], bbx["ymin"], bbx["xmax"], bbx["ymax"])  # type: ignore
+
+    crs_wgs84 = CRS.from_epsg(4326)  # WGS84
+    crs_epsg3857 = CRS.from_epsg(3857)  # EPSG:3857 (Web Mercator)
+
+    transformer = Transformer.from_crs(crs_wgs84, crs_epsg3857)
+
+    min_x, min_y = transformer.transform(bbx[1], bbx[0])  # type: ignore
+    max_x, max_y = transformer.transform(bbx[3], bbx[2])  # type: ignore
+
+    bbx = (min_x, min_y, max_x, max_y)  # type: ignore
+
+    return bbx  # type: ignore

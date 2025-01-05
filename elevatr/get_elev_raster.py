@@ -4,12 +4,13 @@ from typing import Optional, Tuple
 
 from .downloader import _get_aws_terrain
 from .raster import Raster
-from .raster_operations import _merge_rasters
+from .raster_operations import _clip_bbx, _merge_rasters
 
 
 def get_elev_raster(
     locations: Tuple[float, float, float, float],
     zoom: int,
+    clip: Optional[str] = "bbox",
     cache_folder: Optional[str] = "./cache",
     use_cache: Optional[bool] = True,
     delete_cache: Optional[bool] = True,
@@ -24,6 +25,8 @@ def get_elev_raster(
         (min_lon, min_lat) is the bottom-left corner and (max_lon, max_lat) is the top-right corner.
     zoom : int
         Zoom level of the raster. Between 0 and 14. Greater zoom level means higher resolution.
+    clip : str, optional
+        Clip the raster to the bounding box ('bbox') or the tile ('tile'), by default 'bbox'.
     cache_folder : str, optional
         Folder to store the downloaded tiles, by default "./cache"
     use_cache : bool, optional
@@ -68,6 +71,7 @@ def get_elev_raster(
     assert (
         isinstance(zoom, int) and 0 <= zoom <= 14
     ), "zoom must be an integer between 0 and 14."
+    assert clip in ["bbox", "tile"], "clip must be either 'bbox' or 'tile'."
     assert isinstance(cache_folder, str), "cache_folder must be a string."
     assert isinstance(use_cache, bool), "use_cache must be a boolean."
     assert isinstance(delete_cache, bool), "delete_cache must be a boolean."
@@ -89,6 +93,10 @@ def get_elev_raster(
         mosaic, meta = _merge_rasters(downloaded_tiles)
     else:
         mosaic, meta = _merge_rasters(downloaded_tiles)
+
+    # Clip the raster to the bounding box
+    if clip == "bbox":
+        mosaic, meta = _clip_bbx(mosaic, meta, bbx)
 
     if delete_cache:
         shutil.rmtree(cache_folder)
