@@ -58,8 +58,6 @@ lint:
 # format code
 format:
 	$(ENV)/bin/black --line-length 110 elevatr tests
-	find . -type f -name "*.py" -not -path "./$(ENV)/*" \
-		-exec $(ENV)/bin/docformatter --wrap-summaries 110 --wrap-descriptions 110 --in-place {} +
 	@echo "🔄 Code formatted 🔄"
 
 # Display help

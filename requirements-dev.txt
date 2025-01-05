@@ -2,7 +2,6 @@
 black
 codecov
 coverage
-docformatter
 flake8
 furo
 mypy
