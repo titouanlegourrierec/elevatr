@@ -399,13 +399,16 @@ def test_raster_save_and_load(mock_raster_data):
     data, meta = mock_raster_data
     raster = Raster(data=data, meta=meta)
 
-    with tempfile.NamedTemporaryFile(suffix=".tif", delete=True) as temp_tif:
+    with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as temp_tif:
+        temp_tif.close()
         raster.to_tif(temp_tif.name)
 
         with rasterio.open(temp_tif.name) as src:
             loaded_data = src.read(1)
             assert np.array_equal(loaded_data, raster.to_numpy())
             assert src.meta["crs"] == raster.meta["crs"]
+
+    os.remove(temp_tif.name)
 
 
 def test_raster_show_clip_zero():
