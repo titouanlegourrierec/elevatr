@@ -3,7 +3,7 @@
 <!---------------------------------------------->
 <h1 align="center">
   <br>
-  <a href="https://github.com/titouanlegourrierec/elevatr"><img src="https://github.com/titouanlegourrierec/elevatr/blob/main/assets/elv.png" alt="elevatr" width="120"></a>
+  <a href="https://github.com/titouanlegourrierec/elevatr"><img src="https://raw.githubusercontent.com/titouanlegourrierec/elevatr/main/assets/elv.png" alt="elevatr" width="120"></a>
   <br>
   elevatr
   <br>
@@ -92,7 +92,7 @@ raster.show(cmap='terrain', clip_zero=True)
 ```
 #### 🌍 Example output:
 <div style="text-align: center;">
-    <img src="https://github.com/titouanlegourrierec/elevatr/blob/main/assets/raster_example.png" alt="alt text" width="50%">
+    <img src="https://raw.githubusercontent.com/titouanlegourrierec/elevatr/main/assets/raster_example.png" alt="alt text" width="50%">
 </div>
 
 ### 💾 Save to TIFF File
