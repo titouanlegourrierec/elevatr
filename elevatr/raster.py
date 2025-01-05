@@ -41,8 +41,7 @@ class Raster:
         clip_color: Optional[str] = "white",
         **kwargs
     ) -> None:
-        """
-        Display the raster data as an image.
+        """Display the raster data as an image.
 
         Parameters
         ----------
@@ -75,8 +74,7 @@ class Raster:
         plt.show()
 
     def to_numpy(self) -> np.ndarray:
-        """
-        Return the raster data as a NumPy array.
+        """Return the raster data as a NumPy array.
 
         Returns
         -------
@@ -86,8 +84,7 @@ class Raster:
         return self.data
 
     def to_tif(self, path: str) -> None:
-        """
-        Write the raster data to a GeoTIFF file.
+        """Write the raster data to a GeoTIFF file.
 
         Parameters
         ----------

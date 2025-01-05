@@ -15,8 +15,7 @@ def get_elev_raster(
     delete_cache: Optional[bool] = True,
     verbose: Optional[bool] = True,
 ) -> Raster:
-    """
-    Get elevation raster for a bounding box. The raster is downloaded from AWS Terrain Tiles.
+    """Get elevation raster for a bounding box. The raster is downloaded from AWS Terrain Tiles.
 
     Parameters
     ----------
@@ -24,27 +23,27 @@ def get_elev_raster(
         Bounding box coordinates (min_lon, min_lat, max_lon, max_lat) in WGS84/EPSG:4326.
         (min_lon, min_lat) is the bottom-left corner and (max_lon, max_lat) is the top-right corner.
     zoom : int
-        Zoom level of the raster. Between 0 and 14.
-    cache_folder : Optional[str], optional
+        Zoom level of the raster. Between 0 and 14. Greater zoom level means higher resolution.
+    cache_folder : str, optional
         Folder to store the downloaded tiles, by default "./cache"
-    use_cache : Optional[bool], optional
+    use_cache : bool, optional
         Use the cache if available, by default True
-    delete_cache : Optional[bool], optional
+    delete_cache : bool, optional
         Delete the cache folder after the raster is created, by default True
-    verbose : Optional[bool], optional
+    verbose : bool, optional
         Print progress messages, by default True
 
     Returns
     -------
-    Tuple[np.ndarray, dict]
-        Elevation raster and metadata dictionary with the following keys:
+    Raster
+        A Raster object containing the elevation raster and metadata.
 
     Examples
     --------
     >>> from elevatr import get_elev_raster
-    >>> locations = (-122.5, 37.5, -122, 38)
-    >>> zoom = 8
-    >>> raster, meta = get_elev_raster(locations, zoom)
+    >>> locations = (-5.14, 41.33, 9.56, 51.09)
+    >>> zoom = 6
+    >>> raster = get_elev_raster(locations, zoom)
     """
     # Validate inputs
     is_valid_locations = (

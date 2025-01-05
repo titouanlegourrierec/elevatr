@@ -18,8 +18,7 @@ def _get_aws_terrain(
     use_cache: bool,
     verbose: bool,
 ) -> List[str]:
-    """
-    Download terrain tiles of a specified zoom level within a bounding box from AWS.
+    """Download terrain tiles of a specified zoom level within a bounding box from AWS.
 
     Parameters
     ----------
@@ -34,12 +33,17 @@ def _get_aws_terrain(
         - 'ymax' : float
             Maximum latitude of the bounding box.
     zoom : int
-        Zoom level, a non-negative integer where higher values correspond to more detailed tiles.
+        Zoom level, a integer between 0 and 14 where higher values correspond to more detailed tiles.
     cache_folder : str
         Path to the folder where tiles will be cached.
     use_cache : bool
         If True, use cached tiles if they exist.
     verbose : bool
+
+    Returns
+    -------
+    List[str]
+        List of filepaths to the downloaded tiles.
     """
 
     def _construct_tile_filename(url: str) -> str:

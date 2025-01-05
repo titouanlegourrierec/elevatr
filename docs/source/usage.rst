@@ -71,7 +71,7 @@ Need the data in array format for further processing? It’s just as easy:
 
 .. code-block:: python
 
-    raster_array = raster.to_array()
+    raster_array = raster.to_numpy()
 
 Sample output:
 
@@ -92,7 +92,7 @@ Want to keep your elevation data for later? Save it as a GeoTIFF file:
 
 .. code-block:: python
 
-    raster.save('elevation.tif')
+    raster.to_tif('elevation.tif')
 
 ----
 

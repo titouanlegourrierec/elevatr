@@ -8,8 +8,7 @@ from rasterio.merge import merge
 
 
 def _merge_rasters(raster_list: List[str]) -> Tuple[np.ndarray, dict]:
-    """
-    Merge a list of rasters into a single raster.
+    """Merge a list of rasters into a single raster.
 
     Parameters
     ----------
