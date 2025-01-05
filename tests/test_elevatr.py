@@ -18,6 +18,8 @@ from elevatr.utils import _get_tile_xy, _lonlat_to_tilenum
 
 matplotlib.use("Agg")  # Use a non-interactive backend for testing
 
+# Test cases for utils
+
 
 @pytest.mark.parametrize(
     "lon_deg, lat_deg, zoom, expected",
@@ -56,6 +58,9 @@ def test_get_tile_xy_zoom_levels(bbx, zoom, max_tile_x, max_tile_y):
     assert (
         result["tile_y"] <= max_tile_y
     ).all(), f"Tile y-coordinates exceed max for zoom {zoom}"
+
+
+# Test cases for raster_operations
 
 
 @pytest.fixture
@@ -97,6 +102,9 @@ def test_merge_rasters(create_test_rasters):
     assert meta["crs"].to_string() == "EPSG:3857"  # Check CRS
     assert mosaic[0, 0, 0] == 1  # Check the first pixel value
     assert mosaic[0, 0, 2] == 2  # Check the transition between rasters
+
+
+# Test cases for downloader
 
 
 @pytest.fixture
@@ -182,6 +190,9 @@ def test_get_aws_terrain_request_exception(bbx, zoom, tmp_path):
         # Ensure the function raises RuntimeError
         with pytest.raises(RuntimeError, match="Failed to download"):
             _get_aws_terrain(bbx, zoom, cache_folder, use_cache=False, verbose=False)
+
+
+# Test cases for get_elev_raster
 
 
 @pytest.fixture
@@ -305,6 +316,9 @@ def test_get_elev_raster_no_cache_folder(mock_bbox, mock_zoom):
         shutil.rmtree(cache_folder)
 
 
+# Test cases for raster
+
+
 def test_raster_post_init():
     """Test the initialization of the Raster class."""
     data = np.random.rand(1, 2, 2)
@@ -376,6 +390,29 @@ def test_raster_to_tif():
             assert src.meta["dtype"] == "float32"
 
     os.remove(temp_tif.name)
+
+
+def test_raster_to_tif_invalid_compression():
+    """Test the to_tif method of the Raster class with an invalid compression format."""
+    data = np.random.rand(1, 2, 2).astype(np.float32)
+    meta = {
+        "driver": "GTiff",
+        "height": 2,
+        "width": 2,
+        "count": 1,
+        "dtype": "float32",
+        "crs": "EPSG:4326",
+        "transform": rasterio.transform.from_origin(1, 0, 1, 1),
+    }
+    raster = Raster(data=data, meta=meta)
+
+    with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as temp_tif:
+        temp_tif.close()
+        with pytest.raises(
+            ValueError,
+            match="Invalid compression type: invalid_compression. Valid options are",
+        ):
+            raster.to_tif(temp_tif.name, compress="invalid_compression")
 
 
 @pytest.fixture

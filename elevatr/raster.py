@@ -39,7 +39,7 @@ class Raster:
         figsize: Optional[tuple] = (10, 10),
         clip_zero: Optional[bool] = False,
         clip_color: Optional[str] = "white",
-        **kwargs
+        **kwargs,
     ) -> None:
         """Display the raster data as an image.
 
@@ -83,13 +83,28 @@ class Raster:
         """
         return self.data
 
-    def to_tif(self, path: str) -> None:
+    def to_tif(self, path: str, compress: Optional[str] = None) -> None:
         """Write the raster data to a GeoTIFF file.
 
         Parameters
         ----------
         path : str
             The path to write the GeoTIFF file.
+        compress : str, optional
+            The compression type to use for the GeoTIFF file, by default None. Options are:
+            - None: no compression
+            - "lzw": Lempel-Ziv-Welch (LZW) compression, lossless, good for general use
+            - "packbits": PackBits compression, simple and fast, but less efficient
+            - "deflate": DEFLATE compression, lossless, balances speed and compression ratio
+            - "zstd": Zstandard compression, lossless, high compression ratio and fast decompression
+            - "lzma": LZMA compression, lossless, very high compression ratio but slower
         """
+        valid_compressions = [None, "lzw", "packbits", "deflate", "zstd", "lzma"]
+        if compress not in valid_compressions:
+            raise ValueError(
+                f"Invalid compression type: {compress}. Valid options are {valid_compressions}"
+            )
+
+        self.meta.update(compress=compress)
         with rasterio.open(path, "w", **self.meta) as dst:
             dst.write(self.data, 1)
