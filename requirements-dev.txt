@@ -3,10 +3,7 @@ black
 codecov
 coverage
 flake8
-furo
 mypy
 pre-commit
 pytest
 pytest-xdist
-sphinx
-sphinx-autodoc-typehints
