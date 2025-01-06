@@ -61,13 +61,6 @@ def get_elev_raster(
         "Longitude must be between -180 and 180. Latitude must be between -90 and 90."
     )
 
-    bbx = {
-        "xmin": locations[0],
-        "ymin": locations[1],
-        "xmax": locations[2],
-        "ymax": locations[3],
-    }
-
     assert (
         isinstance(zoom, int) and 0 <= zoom <= 14
     ), "zoom must be an integer between 0 and 14."
@@ -81,7 +74,7 @@ def get_elev_raster(
         os.makedirs(cache_folder)
 
     downloaded_tiles = _get_aws_terrain(
-        bbx=bbx,
+        bbx=locations,
         zoom=zoom,
         cache_folder=cache_folder,
         use_cache=use_cache,
@@ -96,7 +89,7 @@ def get_elev_raster(
 
     # Clip the raster to the bounding box
     if clip == "bbox":
-        mosaic, meta = _clip_bbx(mosaic, meta, bbx)
+        mosaic, meta = _clip_bbx(mosaic, meta, locations)
 
     if delete_cache:
         shutil.rmtree(cache_folder)

@@ -92,6 +92,7 @@ class Raster:
             The path to write the GeoTIFF file.
         compress : str, optional
             The compression type to use for the GeoTIFF file, by default None. Options are:
+
             - None: no compression
             - "lzw": Lempel-Ziv-Welch (LZW) compression, lossless, good for general use
             - "packbits": PackBits compression, simple and fast, but less efficient

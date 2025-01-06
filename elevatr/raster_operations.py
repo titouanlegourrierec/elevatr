@@ -55,7 +55,7 @@ def _merge_rasters(raster_list: List[str]) -> Tuple[np.ndarray, dict]:
 def _clip_bbx(
     data: np.ndarray,
     meta: Dict[str, Any],
-    bbx: Dict[str, float],
+    bbx: Tuple[float, float, float, float],
 ) -> Tuple[np.ndarray, Dict[str, Any]]:
     """
     Clip a raster to a bounding box.
@@ -66,8 +66,10 @@ def _clip_bbx(
         The raster data as a NumPy array.
     meta : dict
         Metadata for the raster, including driver, CRS, height, width, and transform.
-    bbx : dict
-        The bounding box to clip the raster to, in WGS84 coordinates.
+    bbx : tuple
+        A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
+        xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and
+        maximum latitudes.
 
     Returns
     ----------

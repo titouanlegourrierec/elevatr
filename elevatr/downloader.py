@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from urllib.parse import urlparse
 
 import requests  # type: ignore
@@ -12,7 +12,7 @@ CHUNCK_SIZE = 8192
 
 
 def _get_aws_terrain(
-    bbx: Dict[str, float],
+    bbx: Tuple[float, float, float, float],
     zoom: int,
     cache_folder: str,
     use_cache: bool,
@@ -22,16 +22,10 @@ def _get_aws_terrain(
 
     Parameters
     ----------
-    bbx : dict
-        A dictionary representing the bounding box with keys 'xmin', 'xmax', 'ymin', and 'ymax'.
-        - 'xmin' : float
-            Minimum longitude of the bounding box.
-        - 'xmax' : float
-            Maximum longitude of the bounding box.
-        - 'ymin' : float
-            Minimum latitude of the bounding box.
-        - 'ymax' : float
-            Maximum latitude of the bounding box.
+    bbx : tuple
+        A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
+        xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and
+        maximum latitudes.
     zoom : int
         Zoom level, a integer between 0 and 14 where higher values correspond to more detailed tiles.
     cache_folder : str

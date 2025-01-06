@@ -45,8 +45,8 @@ def test_lonlat_to_tilenum(lon_deg, lat_deg, zoom, expected):
 @pytest.mark.parametrize(
     "bbx, zoom, max_tile_x, max_tile_y",
     [
-        ({"xmin": -10, "xmax": 10, "ymin": -10, "ymax": 10}, 0, 0, 0),
-        ({"xmin": -10, "xmax": 10, "ymin": -10, "ymax": 10}, 1, 1, 1),
+        ((-10, 10, -10, 10), 0, 0, 0),
+        ((-10, 10, -10, 10), 1, 1, 1),
     ],
 )
 def test_get_tile_xy_zoom_levels(bbx, zoom, max_tile_x, max_tile_y):
@@ -110,12 +110,7 @@ def test_merge_rasters(create_test_rasters):
 @pytest.fixture
 def bbx():
     """Bounding box coordinates for testing."""
-    return {
-        "xmin": -123.1,
-        "xmax": -122.9,
-        "ymin": 37.7,
-        "ymax": 37.8,
-    }
+    return (-123.1, -122.9, 37.7, 37.8)
 
 
 @pytest.fixture

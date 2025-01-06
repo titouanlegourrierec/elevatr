@@ -1,5 +1,5 @@
 import math
-from typing import Dict, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -61,21 +61,15 @@ def _lonlat_to_tilenum(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, 
     return xtile, ytile
 
 
-def _get_tile_xy(bbx: dict, zoom: int) -> pd.DataFrame:
+def _get_tile_xy(bbx: Tuple[float, float, float, float], zoom: int) -> pd.DataFrame:
     """Generate a DataFrame of tile coordinates within a bounding box at a specific zoom level.
 
     Parameters
     ----------
-    bbx : dict
-        A dictionary representing the bounding box with keys 'xmin', 'xmax', 'ymin', and 'ymax'.
-        - 'xmin' : float
-            Minimum longitude of the bounding box.
-        - 'xmax' : float
-            Maximum longitude of the bounding box.
-        - 'ymin' : float
-            Minimum latitude of the bounding box.
-        - 'ymax' : float
-            Maximum latitude of the bounding box.
+    bbx : tuple
+        A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
+        xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and
+        maximum latitudes.
     zoom : int
         Zoom level, a non-negative integer where higher values correspond to more detailed tiles.
 
@@ -99,7 +93,7 @@ def _get_tile_xy(bbx: dict, zoom: int) -> pd.DataFrame:
 
     Examples
     --------
-    >>> bbx = {'xmin': -5.14, 'ymin': 41.33, 'xmax': 9.56, 'ymax': 51.09}
+    >>> bbx = (-5.14, 41.33, 9.56, 51.09)
     >>>_get_tile_xy(bbx, 6)
        tile_x  tile_y
     0      31      21
@@ -113,18 +107,20 @@ def _get_tile_xy(bbx: dict, zoom: int) -> pd.DataFrame:
     8      33      23
     """
 
+    xmin, ymin, xmax, ymax = bbx
+
     # Normalize bounding box coordinates
-    bbx["xmin"], bbx["xmax"] = sorted([bbx["xmin"], bbx["xmax"]])
-    bbx["ymin"], bbx["ymax"] = sorted([bbx["ymin"], bbx["ymax"]])
-    bbx["xmin"] = bbx["xmin"] - 360 if bbx["xmin"] > 180 else bbx["xmin"]
-    bbx["xmax"] = bbx["xmax"] - 360 if bbx["xmax"] > 180 else bbx["xmax"]
+    xmin, xmax = sorted([xmin, xmax])
+    ymin, ymax = sorted([ymin, ymax])
+    xmin = xmin - 360 if xmin > 180 else xmin
+    xmax = xmax - 360 if xmax > 180 else xmax
 
     # Convert to float
-    bbx = {k: float(v) for k, v in bbx.items()}
+    xmin, ymin, xmax, ymax = float(xmin), float(ymin), float(xmax), float(ymax)
 
     # Get tile numbers
-    min_tile = _lonlat_to_tilenum(bbx["xmin"], bbx["ymin"], zoom)
-    max_tile = _lonlat_to_tilenum(bbx["xmax"], bbx["ymax"], zoom)
+    min_tile = _lonlat_to_tilenum(xmin, ymin, zoom)
+    max_tile = _lonlat_to_tilenum(xmax, ymax, zoom)
     xmin, xmax = min_tile[0], max_tile[0]
     ymin, ymax = min_tile[1], max_tile[1]
 
@@ -148,22 +144,16 @@ def _get_tile_xy(bbx: dict, zoom: int) -> pd.DataFrame:
 
 
 def convert_wgs84_bbox_to_web_mercator(
-    bbx: Dict[str, float]
+    bbx: Tuple[float, float, float, float],
 ) -> Tuple[float, float, float, float]:
     """Convert a bounding box from WGS84 to Web Mercator (EPSG:3857).
 
     Parameters
     ----------
-    bbx : dict
-        A dictionary representing the bounding box with keys 'xmin', 'xmax', 'ymin', and 'ymax'.
-        - 'xmin' : float
-            Minimum longitude of the bounding box.
-        - 'xmax' : float
-            Maximum longitude of the bounding box.
-        - 'ymin' : float
-            Minimum latitude of the bounding box.
-        - 'ymax' : float
-            Maximum latitude of the bounding box.
+    bbx : tuple
+        A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
+        xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and
+        maximum latitudes.
 
     Returns
     -------
@@ -177,16 +167,14 @@ def convert_wgs84_bbox_to_web_mercator(
     (-572182.1826774261, 5061139.118730165, 1064214.3319836953, 6637229.1478071)
     """
 
-    bbx: Tuple[float] = (bbx["xmin"], bbx["ymin"], bbx["xmax"], bbx["ymax"])  # type: ignore
-
     crs_wgs84 = CRS.from_epsg(4326)  # WGS84
     crs_epsg3857 = CRS.from_epsg(3857)  # EPSG:3857 (Web Mercator)
 
     transformer = Transformer.from_crs(crs_wgs84, crs_epsg3857)
 
-    min_x, min_y = transformer.transform(bbx[1], bbx[0])  # type: ignore
-    max_x, max_y = transformer.transform(bbx[3], bbx[2])  # type: ignore
+    min_x, min_y = transformer.transform(bbx[1], bbx[0])
+    max_x, max_y = transformer.transform(bbx[3], bbx[2])
 
-    bbx = (min_x, min_y, max_x, max_y)  # type: ignore
+    bbx = (min_x, min_y, max_x, max_y)
 
-    return bbx  # type: ignore
+    return bbx
