@@ -8,6 +8,17 @@ elevatr |version|
 
 :kbd:`elevatr` is a Python library designed for downloading and processing elevation data. It is particularly useful for geospatial analyses and visualizations. The library supports high-resolution raster data and offers easy-to-use tools for displaying and exporting elevation information. 🌍📊
 
+.. image:: https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white
+    :target: https://github.com/titouanlegourrierec/elevatr
+    :alt: GitHub Repo
+
+.. image:: https://img.shields.io/pypi/v/elevatr.svg
+    :target: https://pypi.org/project/elevatr/
+    :alt: Pypi Version
+
+.. image:: https://img.shields.io/pypi/l/elevatr.svg
+    :alt: License
+
 -----
 
 📦 Installation
@@ -35,6 +46,13 @@ Dive deeper into the features and capabilities of :kbd:`elevatr` by visiting the
 
 -----
 
+🌐 Data Sources
+---------------
+
+More information about the data sources used in :kbd:`elevatr` can be found on the `Data Sources Page <data.html>`_.
+
+-----
+
 ⚖️ License
 ------------
 
@@ -56,3 +74,4 @@ For more details, read the full MIT License `here <https://opensource.org/licens
 
    documentation
    usage
+   data
