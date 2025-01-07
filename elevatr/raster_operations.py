@@ -33,12 +33,19 @@ def _merge_rasters(raster_list: List[str]) -> Tuple[np.ndarray, dict]:
     >>> mosaic, meta = merge_rasters(raster_list)
     """
 
+    imagery_sources_set = set()
+
     with rasterio.open(raster_list[0]) as first_raster:
         with ExitStack() as stack:
             rasters = [first_raster] + [
                 stack.enter_context(rasterio.open(raster)) for raster in raster_list[1:]
             ]
             mosaic, out_trans = merge(rasters)
+
+            # Collect imagery sources from each raster
+            for raster in rasters:
+                sources = raster.tags().get("imagery_sources", "")
+                imagery_sources_set.update(sources.split(", "))
 
             meta = first_raster.meta.copy()
             meta.update(
@@ -48,6 +55,7 @@ def _merge_rasters(raster_list: List[str]) -> Tuple[np.ndarray, dict]:
                     "height": mosaic.shape[1],
                     "width": mosaic.shape[2],
                     "transform": out_trans,
+                    "imagery_sources": ", ".join(sorted(imagery_sources_set)),
                 }
             )
 

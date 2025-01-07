@@ -5,6 +5,7 @@
 - Ask for user confirmation before downloading large files.
 - Add reprojection functionality to `get_elev_raster` function and `Raster` class.
 - Added the ability to access the resolution of the raster through the `Raster` class via the `raster.resolution`
+- Added the ability to access the imagery sources through the `Raster` class via the `raster.imagery_sources`
 
 ## 0.2.0 - 2025-01-06
 ### Added

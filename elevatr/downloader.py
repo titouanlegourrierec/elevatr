@@ -2,6 +2,7 @@ import os
 from typing import List, Tuple
 from urllib.parse import urlparse
 
+import rasterio
 import requests  # type: ignore
 from tqdm import tqdm
 
@@ -55,10 +56,27 @@ def _get_aws_terrain(
                 if "image/tif" not in response.headers.get("Content-Type", ""):
                     raise ValueError(f"Invalid file type for URL {url}")
 
+                imagery_sources = response.headers.get(
+                    "x-amz-meta-x-imagery-sources", ""
+                )
+                imagery_sources_set = {
+                    source.split("/")[0].strip()
+                    for source in imagery_sources.split(",")
+                }
+
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
                 with open(destination, "wb") as file:
                     for chunk in response.iter_content(chunk_size=CHUNCK_SIZE):
                         file.write(chunk)
+
+                # Update the TIF file metadata with imagery sources
+                with rasterio.open(destination, "r+") as dataset:
+                    metadata = dataset.meta.copy()
+                    metadata.update(
+                        {"imagery_sources": ", ".join(sorted(imagery_sources_set))}
+                    )
+                    dataset.update_tags(**metadata)
+
             return destination
         except requests.RequestException as e:
             raise RuntimeError(f"Failed to download {url}: {e}")

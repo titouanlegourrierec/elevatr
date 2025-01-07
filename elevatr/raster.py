@@ -27,6 +27,7 @@ class Raster:
     transform: Optional[Any] = field(init=False)
     bounds: Optional[Tuple[float, float, float, float]] = field(init=False)
     resolution: Optional[Dict[str, Any]] = field(init=False)
+    imagery_sources: Optional[str] = field(init=False)
 
     def __post_init__(self):
         """Post-initialization method."""
@@ -44,6 +45,7 @@ class Raster:
             float(self.transform[5]),
         )
         self.resolution = self._resolution()
+        self.imagery_sources = self.meta.get("imagery_sources", None)
 
     def _resolution(self) -> Dict[str, Any]:
         resolution = (abs(self.transform[0]), abs(self.transform[4]))  # type: ignore
