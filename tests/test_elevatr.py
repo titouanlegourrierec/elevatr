@@ -255,14 +255,14 @@ def test_get_elev_raster_delete_cache(mock_bbox, mock_zoom, mock_cache_folder):
         mock_rmtree.assert_called_once_with(mock_cache_folder)
 
 
-def test_get_elev_raster_invalid_locations():
+def test_get_elev_raster_invalid_locations(mock_zoom):
     """Test get_elev_raster with invalid locations."""
     invalid_locations = "invalid"
 
     with pytest.raises(AssertionError, match="locations must be a tuple of length 4"):
         get_elev_raster(
             locations=invalid_locations,
-            zoom=8,
+            zoom=mock_zoom,
             cache_folder="./cache",
             use_cache=True,
             delete_cache=True,
@@ -280,6 +280,22 @@ def test_get_elev_raster_invalid_zoom(mock_bbox):
         get_elev_raster(
             locations=mock_bbox,
             zoom=invalid_zoom,
+            cache_folder="./cache",
+            use_cache=True,
+            delete_cache=True,
+            verbose=False,
+        )
+
+
+def test_get_elev_raster_invalid_crs(mock_bbox, mock_zoom):
+    """Test get_elev_raster with invalid CRS."""
+    invalid_crs = "invalid_crs"
+
+    with pytest.raises(ValueError, match="Invalid CRS: invalid_crs"):
+        get_elev_raster(
+            locations=mock_bbox,
+            zoom=mock_zoom,
+            crs=invalid_crs,
             cache_folder="./cache",
             use_cache=True,
             delete_cache=True,
@@ -338,7 +354,11 @@ def test_raster_post_init():
 def test_raster_show():
     """Test the show method of the Raster class."""
     data = np.random.rand(1, 2, 2)
-    meta = {"transform": rasterio.transform.from_origin(0, 0, 1, 1)}
+    meta = {
+        "transform": rasterio.transform.from_origin(0, 0, 1, 1),
+        "height": 2,
+        "width": 2,
+    }
     raster = Raster(data=data, meta=meta)
 
     with patch("matplotlib.pyplot.show") as mock_show:
@@ -346,10 +366,33 @@ def test_raster_show():
         mock_show.assert_called_once()
 
 
+def test_raster_show_clip_zero():
+    """Test the show method with clip_zero=True."""
+    data = np.random.randn(1, 2, 2)  # Random data including negative values
+    meta = {
+        "transform": rasterio.transform.from_origin(0, 0, 1, 1),
+        "height": 2,
+        "width": 2,
+    }
+    raster = Raster(data=data, meta=meta)
+
+    with patch("matplotlib.pyplot.show") as mock_show:
+        raster.show(cmap="viridis", clip_zero=True)
+        clipped_data = np.where(data[0] < 0, np.nan, data[0])
+        assert np.array_equal(
+            raster.to_numpy()[raster.to_numpy() >= 0], clipped_data[clipped_data >= 0]
+        )
+        mock_show.assert_called_once()
+
+
 def test_raster_to_numpy():
     """Test the to_numpy method of the Raster class."""
     data = np.random.rand(1, 2, 2)
-    meta = {}
+    meta = {
+        "transform": rasterio.transform.from_origin(0, 0, 1, 1),
+        "height": 2,
+        "width": 2,
+    }
     raster = Raster(data=data, meta=meta)
 
     np_array = raster.to_numpy()
@@ -441,18 +484,3 @@ def test_raster_save_and_load(mock_raster_data):
             assert src.meta["crs"] == raster.meta["crs"]
 
     os.remove(temp_tif.name)
-
-
-def test_raster_show_clip_zero():
-    """Test the show method with clip_zero=True."""
-    data = np.random.randn(1, 2, 2)  # Random data including negative values
-    meta = {"transform": rasterio.transform.from_origin(0, 0, 1, 1)}
-    raster = Raster(data=data, meta=meta)
-
-    with patch("matplotlib.pyplot.show") as mock_show:
-        raster.show(cmap="viridis", clip_zero=True)
-        clipped_data = np.where(data[0] < 0, np.nan, data[0])
-        assert np.array_equal(
-            raster.to_numpy()[raster.to_numpy() >= 0], clipped_data[clipped_data >= 0]
-        )
-        mock_show.assert_called_once()

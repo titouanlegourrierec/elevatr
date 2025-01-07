@@ -12,6 +12,7 @@ from .utils import _estimate_files_size
 def get_elev_raster(
     locations: Tuple[float, float, float, float],
     zoom: int,
+    crs: Optional[str] = "EPSG:4326",
     clip: Optional[str] = "bbox",
     cache_folder: Optional[str] = "./cache",
     use_cache: Optional[bool] = True,
@@ -27,6 +28,8 @@ def get_elev_raster(
         (min_lon, min_lat) is the bottom-left corner and (max_lon, max_lat) is the top-right corner.
     zoom : int
         Zoom level of the raster. Between 0 and 14. Greater zoom level means higher resolution.
+    crs : str, optional
+        Coordinate Reference System of the raster, by default "EPSG:4326".
     clip : str, optional
         Clip the raster to the bounding box ('bbox') or the tile ('tile'), by default 'bbox'.
     cache_folder : str, optional
@@ -45,10 +48,10 @@ def get_elev_raster(
 
     Examples
     --------
-    >>> from elevatr import get_elev_raster
+    >>> import elevatr as elv
     >>> locations = (-5.14, 41.33, 9.56, 51.09)
     >>> zoom = 6
-    >>> raster = get_elev_raster(locations, zoom)
+    >>> raster = elv.get_elev_raster(locations, zoom)
     """
     # Validate inputs
     is_valid_locations = (
@@ -108,4 +111,10 @@ def get_elev_raster(
     if delete_cache:
         shutil.rmtree(cache_folder)
 
-    return Raster(mosaic, meta)
+    raster = Raster(mosaic, meta)
+
+    # Reproject the raster if needed
+    if crs != "EPSG:3857":
+        raster.reproject(crs)  # type: ignore
+
+    return raster

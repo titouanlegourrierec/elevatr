@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from rasterio.plot import plotting_extent
+
+from .raster_operations import _reproject_raster
 
 
 @dataclass
@@ -22,6 +24,7 @@ class Raster:
     dtype: Optional[str] = field(init=False)
     nodata: Optional[Any] = field(init=False)
     transform: Optional[Any] = field(init=False)
+    bounds: Optional[Tuple[float, float, float, float]] = field(init=False)
 
     def __post_init__(self):
         """Post-initialization method."""
@@ -32,6 +35,12 @@ class Raster:
         self.dtype = self.meta.get("dtype", None)
         self.nodata = self.meta.get("nodata", None)
         self.transform = self.meta.get("transform", None)
+        self.bounds = (
+            float(self.transform[2]),
+            float(self.transform[5] + self.height * self.transform[4]),
+            float(self.transform[2] + self.width * self.transform[0]),
+            float(self.transform[5]),
+        )
 
     def show(
         self,
@@ -109,3 +118,30 @@ class Raster:
         self.meta.update(compress=compress)
         with rasterio.open(path, "w", **self.meta) as dst:
             dst.write(self.data, 1)
+
+    def reproject(self, crs: str) -> None:
+        """
+        Reproject raster data to the desired CRS.
+
+        Parameters
+        ----------
+        crs : str
+            The target coordinate reference system (CRS) to reproject the raster to.
+
+        Notes
+        -----
+        This method updates the class attributes in place. The original raster data is overwritten.
+        """
+
+        self.data, self.meta = _reproject_raster(self.data, self.meta, crs)
+
+        # Update the class attributes
+        self.crs = self.meta["crs"]
+        self.transform = self.meta["transform"]
+        self.height, self.width = self.meta["height"], self.meta["width"]
+        self.bounds = (
+            float(self.transform[2]),
+            float(self.transform[5] + self.height * self.transform[4]),
+            float(self.transform[2] + self.width * self.transform[0]),
+            float(self.transform[5]),
+        )

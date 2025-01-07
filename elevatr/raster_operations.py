@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import pyproj
 import rasterio
+import rioxarray  # noqa: F401
+import xarray as xr
 from rasterio.merge import merge
 from rasterio.windows import from_bounds
 
@@ -95,3 +97,73 @@ def _clip_bbx(
     meta.update(transform=transform, height=data.shape[1], width=data.shape[2])
 
     return data, meta
+
+
+def _reproject_raster(
+    data: np.ndarray, meta: Dict[str, Any], crs: str
+) -> Tuple[np.ndarray, Dict[str, Any]]:
+    """
+    Reproject raster data to the desired CRS.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The raster data to be reprojected.
+    meta : dict
+        The metadata of the raster, containing information such as transform, crs, width, height.
+    target_crs : str
+        The target coordinate reference system (CRS) to reproject the raster to.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the reprojected data (np.ndarray) and updated meta (dict).
+    """
+    # CRS verification
+    try:
+        _ = pyproj.CRS(crs)
+    except pyproj.exceptions.CRSError:
+        raise ValueError(f"Invalid CRS: {crs}")
+
+    # Reprojection logic using xarray and rioxarray
+    dataarray = xr.DataArray(
+        data,
+        dims=("y", "x"),
+        coords={
+            "x": np.linspace(
+                meta["transform"][2],
+                meta["transform"][2] + meta["transform"][0] * meta["width"],
+                meta["width"],
+            ),
+            "y": np.linspace(
+                meta["transform"][5],
+                meta["transform"][5] + meta["transform"][4] * meta["height"],
+                meta["height"],
+            ),
+        },
+    )
+
+    # Assign original CRS
+    dataarray.rio.write_crs(meta.get("crs"), inplace=True)
+
+    # Reproject to the target CRS
+    reprojected = dataarray.rio.reproject(crs)
+
+    # Update the meta dictionary with new values
+    new_meta = meta.copy()
+    new_meta.update(
+        {
+            "crs": crs,
+            "transform": reprojected.rio.transform(),
+            "height": reprojected.shape[0],
+            "width": reprojected.shape[1],
+            "bounds": (
+                float(reprojected.x.min()),
+                float(reprojected.y.max()),
+                float(reprojected.x.max()),
+                float(reprojected.y.min()),
+            ),
+        }
+    )
+
+    return reprojected.values, new_meta
