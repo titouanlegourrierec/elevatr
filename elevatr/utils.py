@@ -143,34 +143,40 @@ def _get_tile_xy(bbx: Tuple[float, float, float, float], zoom: int) -> pd.DataFr
     return tiles
 
 
-def convert_wgs84_bbox_to_web_mercator(
+def _convert_bbox_crs(
     bbx: Tuple[float, float, float, float],
+    crs_from: str,
+    crs_to: str,
 ) -> Tuple[float, float, float, float]:
     """Convert a bounding box from WGS84 to Web Mercator (EPSG:3857).
 
     Parameters
     ----------
     bbx : tuple
-        A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
-        xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and
-        maximum latitudes.
+        A tuple representing the bounding box with coordinates in the CRS specified by crs_from.
+        The tuple is in the format (min_x, min_y, max_x, max_y).
+    crs_from : str
+        The CRS of the bounding box coordinates.
+    crs_to : str
+        The CRS to convert the bounding box coordinates to.
 
     Returns
     -------
     tuple
-        A tuple representing the bounding box with coordinates in Web Mercator (EPSG:3857).
+        A tuple representing the bounding box with coordinates in the CRS specified by crs_to.
         The tuple is in the format (min_x, min_y, max_x, max_y).
 
     Examples
     --------
-    >>> wgs84_bbox_to_3857((-5.14, 41.33, 9.56, 51.09))
+    >>> bbx = (-5.14, 41.33, 9.56, 51.09)
+    >>> _convert_bbox_crs(bbx, "EPSG:4326", "EPSG:3857")
     (-572182.1826774261, 5061139.118730165, 1064214.3319836953, 6637229.1478071)
     """
 
-    crs_wgs84 = CRS.from_epsg(4326)  # WGS84
-    crs_epsg3857 = CRS.from_epsg(3857)  # EPSG:3857 (Web Mercator)
+    crs_from = CRS.from_epsg(int(crs_from.split(":")[1]))
+    crs_to = CRS.from_epsg(int(crs_to.split(":")[1]))
 
-    transformer = Transformer.from_crs(crs_wgs84, crs_epsg3857)
+    transformer = Transformer.from_crs(crs_from, crs_to)
 
     min_x, min_y = transformer.transform(bbx[1], bbx[0])
     max_x, max_y = transformer.transform(bbx[3], bbx[2])

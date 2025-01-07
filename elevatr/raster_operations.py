@@ -9,7 +9,7 @@ import xarray as xr
 from rasterio.merge import merge
 from rasterio.windows import from_bounds
 
-from .utils import convert_wgs84_bbox_to_web_mercator
+from .utils import _convert_bbox_crs
 
 
 def _merge_rasters(raster_list: List[str]) -> Tuple[np.ndarray, dict]:
@@ -85,7 +85,9 @@ def _clip_bbx(
         with memfile.open(**meta) as dataset:
             dataset.write(data)
 
-            web_mercator_bbox = convert_wgs84_bbox_to_web_mercator(bbx)
+            web_mercator_bbox = _convert_bbox_crs(
+                bbx, crs_from="EPSG:4326", crs_to="EPSG:3857"
+            )
 
             # Calculate the window to clip
             window = from_bounds(*web_mercator_bbox, transform=dataset.transform)
