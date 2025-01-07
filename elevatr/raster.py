@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from pyproj import CRS
 from rasterio.plot import plotting_extent
 
 from .raster_operations import _reproject_raster
@@ -25,6 +26,7 @@ class Raster:
     nodata: Optional[Any] = field(init=False)
     transform: Optional[Any] = field(init=False)
     bounds: Optional[Tuple[float, float, float, float]] = field(init=False)
+    resolution: Optional[Dict[str, Any]] = field(init=False)
 
     def __post_init__(self):
         """Post-initialization method."""
@@ -41,6 +43,18 @@ class Raster:
             float(self.transform[2] + self.width * self.transform[0]),
             float(self.transform[5]),
         )
+        self.resolution = self._resolution()
+
+    def _resolution(self) -> Dict[str, Any]:
+        resolution = (abs(self.transform[0]), abs(self.transform[4]))  # type: ignore
+
+        if self.crs:
+            crs_obj = CRS.from_user_input(self.crs)
+            resolution_unit = crs_obj.axis_info[0].unit_name
+        else:
+            resolution_unit = "unknown"
+
+        return {"x": resolution[0], "y": resolution[1], "unit": resolution_unit}
 
     def show(
         self,
@@ -132,16 +146,17 @@ class Raster:
         -----
         This method updates the class attributes in place. The original raster data is overwritten.
         """
+        if self.crs != crs:
+            self.data, self.meta = _reproject_raster(self.data, self.meta, crs)
 
-        self.data, self.meta = _reproject_raster(self.data, self.meta, crs)
-
-        # Update the class attributes
-        self.crs = self.meta["crs"]
-        self.transform = self.meta["transform"]
-        self.height, self.width = self.meta["height"], self.meta["width"]
-        self.bounds = (
-            float(self.transform[2]),
-            float(self.transform[5] + self.height * self.transform[4]),
-            float(self.transform[2] + self.width * self.transform[0]),
-            float(self.transform[5]),
-        )
+            # Update the class attributes
+            self.crs = self.meta["crs"]
+            self.transform = self.meta["transform"]
+            self.height, self.width = self.meta["height"], self.meta["width"]
+            self.bounds = (
+                float(self.transform[2]),
+                float(self.transform[5] + self.height * self.transform[4]),
+                float(self.transform[2] + self.width * self.transform[0]),
+                float(self.transform[5]),
+            )
+            self.resolution = self._resolution()
