@@ -2,9 +2,11 @@ import os
 import shutil
 from typing import Optional, Tuple
 
+from . import settings
 from .downloader import _get_aws_terrain
 from .raster import Raster
 from .raster_operations import _clip_bbx, _merge_rasters
+from .utils import _estimate_files_size
 
 
 def get_elev_raster(
@@ -15,7 +17,7 @@ def get_elev_raster(
     use_cache: Optional[bool] = True,
     delete_cache: Optional[bool] = True,
     verbose: Optional[bool] = True,
-) -> Raster:
+) -> Optional[Raster]:
     """Get elevation raster for a bounding box. The raster is downloaded from AWS Terrain Tiles.
 
     Parameters
@@ -72,6 +74,18 @@ def get_elev_raster(
 
     if not os.path.exists(cache_folder):
         os.makedirs(cache_folder)
+
+    if settings.ask_confirmation:  # pragma: no cover
+        size = _estimate_files_size(locations, zoom)
+        if size > settings.min_size_for_confirmation:
+            confirmation = input(
+                f"The estimated file size is {int(size)} Go. Do you want to continue? (y/n)"
+            )
+            if confirmation.lower() != "y":
+                print("Operation aborted by the user.")
+                if delete_cache:
+                    shutil.rmtree(cache_folder)
+                return None
 
     downloaded_tiles = _get_aws_terrain(
         bbx=locations,

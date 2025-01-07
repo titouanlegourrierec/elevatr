@@ -178,3 +178,26 @@ def convert_wgs84_bbox_to_web_mercator(
     bbx = (min_x, min_y, max_x, max_y)
 
     return bbx
+
+
+def _estimate_files_size(bbx: Tuple[float, float, float, float], z: int) -> float:
+    """
+    Estimate the total file size based on the bounding box and zoom level.
+
+    Parameters
+    ----------
+    bbx : tuple
+        A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
+        xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and
+        maximum latitudes.
+    z : int
+        Zoom level, a integer between 0 and 14 where higher values correspond to more detailed tiles.
+
+    Returns
+    -------
+    float
+        The estimated total file size in Go.
+    """
+    TILE_SIZE = 0.15  # Tile size in Mo
+
+    return len(_get_tile_xy(bbx, z)) * TILE_SIZE / 1024
