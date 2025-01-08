@@ -5,6 +5,7 @@ pandas
 pyproj
 rasterio
 requests
+rioxarray
 sphinx
 sphinx-autodoc-typehints
 tqdm

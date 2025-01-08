@@ -3,14 +3,17 @@
 
 Welcome to the complete documentation for the :kbd:`elevatr` package. Here, you’ll find everything you need to know about the core functionality of the library.
 
-get_elev_raster function
--------------------------
+.. automodule:: elevatr
+    :noindex:
 
-.. automodule:: elevatr.get_elev_raster
-    :members:
+    elevatr.get_elev_raster
+    -----------------------
 
-Raster class
--------------
+    .. autofunction:: elevatr.get_elev_raster
 
-.. automodule:: elevatr.raster
-    :members:
+
+    elevatr.Raster
+    --------------
+
+    .. autoclass:: elevatr.Raster
+        :members:
