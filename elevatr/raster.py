@@ -64,6 +64,8 @@ class Raster:
         figsize: Optional[tuple] = (10, 10),
         clip_zero: Optional[bool] = False,
         clip_color: Optional[str] = "white",
+        show_extras: Optional[bool] = True,
+        file_path: Optional[str] = None,
         **kwargs,
     ) -> None:
         """Display the raster data as an image.
@@ -78,6 +80,10 @@ class Raster:
             Whether to clip negative values to zero, by default False.
         clip_color : str, optional
             The color to use for clipped values, by default "white".
+        show_extras : bool, optional
+            Whether to show the colorbar and axis, by default True.
+        file_path : str, optional
+            The path to save the image to, by default None.
         **kwargs
             Additional keyword arguments to pass to `matplotlib.pyplot.imshow`.
         """
@@ -92,9 +98,16 @@ class Raster:
         fig, ax = plt.subplots(figsize=figsize)
         cax = ax.imshow(data, extent=extent, cmap=cmap, **kwargs)
 
-        divider = make_axes_locatable(ax)
-        cax_cb = divider.append_axes("right", size="3%", pad=0.05)
-        fig.colorbar(cax, cax=cax_cb)
+        if show_extras:
+            divider = make_axes_locatable(ax)
+            cax_cb = divider.append_axes("right", size="3%", pad=0.05)
+            fig.colorbar(cax, cax=cax_cb)
+            ax.set_axis_on()
+        else:  # pragma: no cover
+            ax.axis("off")
+
+        if file_path:  # pragma: no cover
+            plt.savefig(file_path, bbox_inches="tight", pad_inches=0, dpi=300)
 
         plt.show()
 

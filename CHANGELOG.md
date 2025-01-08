@@ -6,6 +6,7 @@
 - Add reprojection functionality to `get_elev_raster` function and `Raster` class.
 - Added the ability to access the resolution of the raster through the `Raster` class via the `raster.resolution`
 - Added the ability to access the imagery sources through the `Raster` class via the `raster.imagery_sources`
+- Added two parameters to the `show` method of the `Raster` class: `show_extras` to control the display of additional elements, and `file_path` to specify the file path for saving the image.
 
 ## 0.2.0 - 2025-01-06
 ### Added
