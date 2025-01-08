@@ -28,7 +28,8 @@ Let’s dive into a simple example of how to download raster elevation data with
     zoom = 6
 
     # Access the elevation data
-    raster = elv.get_elev_raster(locations=bbx, zoom=zoom)
+    # You can choose the crs of the output raster
+    raster = elv.get_elev_raster(locations=bbx, zoom=zoom, crs="EPSG:3857")
 
 Advanced Options
 
@@ -64,6 +65,10 @@ And here’s an example of what you might see:
     :width: 400
     :align: center
 
+.. note::
+
+   You can customize the visualization by setting the :guilabel:`show_extras` parameter to :guilabel:`False` to remove any additional visual elements. Additionally, you can save the generated image by specifying a file path using the :guilabel:`file_path` parameter.
+
 Converting the Raster to a NumPy Array
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -78,12 +83,12 @@ Sample output:
 .. code-block:: python
 
     array([[  -75,   -76,   -77, ...,    56,    57,    57],
-        [  -77,   -78,   -78, ...,    56,    56,    56],
-        [  -78,   -79,   -79, ...,    56,    55,    55],
-        ...,
-        [  853,   861,   863, ..., -1513, -1601, -1648],
-        [  839,   847,   857, ..., -1568, -1646, -1677],
-        [  819,   823,   830, ..., -1631, -1722, -1773]], dtype=int16)
+           [  -77,   -78,   -78, ...,    56,    56,    56],
+           [  -78,   -79,   -79, ...,    56,    55,    55],
+           ...,
+           [  853,   861,   863, ..., -1513, -1601, -1648],
+           [  839,   847,   857, ..., -1568, -1646, -1677],
+           [  819,   823,   830, ..., -1631, -1722, -1773]], dtype=int16)
 
 Saving the Raster as a GeoTIFF File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,6 +98,44 @@ Want to keep your elevation data for later? Save it as a GeoTIFF file:
 .. code-block:: python
 
     raster.to_tif('elevation.tif')
+
+Reprojecting the Raster to a Different Coordinate Reference System (CRS)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Need to reproject your raster data? No problem! Here’s how you can do it:
+
+.. note::
+
+   This method updates the class attributes in place. The original raster data is overwritten.
+
+.. code-block:: python
+
+    raster.reproject(crs="EPSG:4326")
+
+Here's an example of different reprojected raster data:
+
+.. image:: _static/reprojected_rasters.png
+    :width: 800
+    :align: center
+
+Accessing the Raster metadata:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* :guilabel:`resolution` : Get the resolution of the raster.
+
+.. code-block:: python
+
+    raster.resolution
+
+>>> {'x': 1224.8882616638757, 'y': 1224.8882616638757, 'unit': 'metre'}
+
+* :guilabel:`imagery_sources` : Get the sources of the imagery.
+
+.. code-block:: python
+
+    raster.imagery_sources
+
+>>> 'etopo1, gmted'
 
 ----
 

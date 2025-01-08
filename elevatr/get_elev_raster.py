@@ -12,7 +12,7 @@ from .utils import _estimate_files_size
 def get_elev_raster(
     locations: Tuple[float, float, float, float],
     zoom: int,
-    crs: Optional[str] = "EPSG:4326",
+    crs: Optional[str] = "EPSG:3857",  # Web Mercator projection
     clip: Optional[str] = "bbox",
     cache_folder: Optional[str] = "./cache",
     use_cache: Optional[bool] = True,
@@ -29,7 +29,7 @@ def get_elev_raster(
     zoom : int
         Zoom level of the raster. Between 0 and 14. Greater zoom level means higher resolution.
     crs : str, optional
-        Coordinate Reference System of the raster, by default "EPSG:4326".
+        Coordinate Reference System of the raster, by default "EPSG:3857" (Web Mercator projection).
     clip : str, optional
         Clip the raster to the bounding box ('bbox') or the tile ('tile'), by default 'bbox'.
     cache_folder : str, optional
