@@ -93,9 +93,7 @@ def _clip_bbx(
         with memfile.open(**meta) as dataset:
             dataset.write(data)
 
-            web_mercator_bbox = _convert_bbox_crs(
-                bbx, crs_from="EPSG:4326", crs_to="EPSG:3857"
-            )
+            web_mercator_bbox = _convert_bbox_crs(bbx, crs_from="EPSG:4326", crs_to="EPSG:3857")
 
             # Calculate the window to clip
             window = from_bounds(*web_mercator_bbox, transform=dataset.transform)
@@ -109,9 +107,7 @@ def _clip_bbx(
     return data, meta
 
 
-def _reproject_raster(
-    data: np.ndarray, meta: Dict[str, Any], crs: str
-) -> Tuple[np.ndarray, Dict[str, Any]]:
+def _reproject_raster(data: np.ndarray, meta: Dict[str, Any], crs: str) -> Tuple[np.ndarray, Dict[str, Any]]:
     """
     Reproject raster data to the desired CRS.
 

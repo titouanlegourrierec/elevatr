@@ -1,77 +1,86 @@
-# Variables
-ENV = env
-PYTHON = $(ENV)/bin/python
-PIP = $(ENV)/bin/pip
-TEST = pytest
-REQS = requirements-dev.txt
+PYTHON = python3
+VENV = env
+PROJECT_NAME = elevatr
 
-# Directories to clean
-CLEAN_DIRS = __pycache__ .mypy_cache .pytest_cache
+# Directories and files to clean up
+CLEAN_DIRS = __pycache__ .pytest_cache .mypy_cache htmlcov
+CLEAN_FILES = *.pyc *.pyo *.pyd .coverage
 
-.PHONY: setup install clean test pre-commit lint format help
+# Ignore flake8 errors
+FLAKE8_IGNORE = E501,W503
 
-# Setup the virtual environment
+# Create virtual environment and install dependencies
+.PHONY: setup
 setup:
-	@if [ -d "$(ENV)" ]; then \
-		echo "Virtual environment already exists. Skipping creation."; \
-	else \
-		echo "Setting up virtual environment..."; \
-		python3 -m venv $(ENV); \
-		$(PIP) install --upgrade pip; \
-		$(PIP) install -r $(REQS); \
-		echo "🛠️ Setup complete 🛠️"; \
-	fi
+	@$(PYTHON) -m venv $(VENV) && \
+	. $(VENV)/bin/activate && \
+	$(VENV)/bin/pip install -r requirements-dev.txt
+	@echo "🛠️ Setup complete 🛠️"
 
 # Install dependencies
-install:
-	$(PIP) install -r $(REQS)
-	@echo "📦 Dependencies installed 📦"
+.PHONY: install-deps
+install-deps:
+	@. $(VENV)/bin/activate && \
+	$(VENV)/bin/pip install -r requirements-dev.txt > /dev/null 2>&1 && \
+	$(VENV)/bin/pip install -r docs/requirements-docs.txt > /dev/null 2>&1
 
-# Clean all specified directories
+# Clean up files and directories
+.PHONY: clean
 clean:
 	@for dir in $(CLEAN_DIRS); do \
-    	find . -name "$$dir" -exec rm -rf {} \; 2>/dev/null || true; \
+		find . -name "$$dir" -exec rm -rf {} \; 2>/dev/null || true; \
 	done
-	@echo "🧹 Cleaned all specified directories 🧹"
+	@for file in $(CLEAN_FILES); do \
+		find . -name "$$file" -exec rm -f {} \; 2>/dev/null || true; \
+	done
+	@echo "🧹 Cleaned up 🧹"
+
+# Lint the code
+.PHONY: lint
+lint: install-deps
+	@. $(VENV)/bin/activate && \
+	FILES="$(PROJECT_NAME) $(if $(wildcard tests/),tests/)" && \
+	$(VENV)/bin/black -l 110 $$FILES && \
+	$(VENV)/bin/flake8 --ignore=$(FLAKE8_IGNORE) $$FILES && \
+	$(VENV)/bin/isort $$FILES && \
+	$(VENV)/bin/mypy --ignore-missing-imports $$FILES
+	@echo "🔄 code linted 🔄"
 
 # Run tests
-test:
-	$(ENV)/bin/pytest -n auto tests
+.PHONY: test
+test: install-deps
+	@. $(VENV)/bin/activate && \
+	$(VENV)/bin/pytest -n auto tests/
 	@echo "🧪 Tests passed 🧪"
 
-coverage:
-	$(ENV)/bin/coverage run --source=elevatr -m pytest tests
-	$(ENV)/bin/coverage report
-	$(ENV)/bin/coverage html
-	@echo "📊 Coverage report generated 📊"
+# Run tests with coverage
+.PHONY: coverage
+coverage: install-deps
+	@. $(VENV)/bin/activate && \
+	$(VENV)/bin/coverage run --source=$(PROJECT_NAME) -m pytest tests/ && \
+	$(VENV)/bin/coverage report
+	$(VENV)/bin/coverage html
+	@echo "🧪 Tests passed 🧪"
 
-# Pre commit
-pre-commit:
-	$(ENV)/bin/pre-commit run --all-files --config .pre-commit-config.yaml
-	@echo "🔍 Pre-commit hooks passed 🔍"
-
-# lint code
-lint:
-	$(ENV)/bin/flake8 --ignore=E501,D202,E402,W503,D100,D104 elevatr tests
-	@echo "🛠️ Linting passed 🛠️"
-
-# format code
-format:
-	$(ENV)/bin/black --line-length 110 elevatr tests
-	@echo "🔄 Code formatted 🔄"
+# Build the documentation
+.PHONY: docs
+docs: install-deps
+	@. $(VENV)/bin/activate && \
+	cd docs && make html
+	open docs/build/html/index.html
+	@echo "📚 Documentation built 📚"
 
 # Display help
+.PHONY: help
 help:
-	@echo "==================================================================="
-	@echo "                         Available targets                         "
-	@echo "==================================================================="
+	@echo "====================================================================="
+	@echo "====                      Available targets                      ===="
+	@echo "====================================================================="
 	@echo "  setup      - 🛠️ Setup virtual environment and install dependencies"
-	@echo "  install    - 📦 Install dependencies"
-	@echo "  clean      - 🧹 Clean all specified directories"
+	@echo "  clean      - 🧹 Clean up files and directories"
+	@echo "  lint       - 🔄 Lint the code"
 	@echo "  test       - 🧪 Run tests"
-	@echo "  coverage   - 📊 Generate coverage report"
-	@echo "  pre-commit - 🔍 Run pre-commit hooks"
-	@echo "  lint       - 🛠️ Lint code"
-	@echo "  format     - 🔄 Format code"
+	@echo "  coverage   - 🧪 Run tests with coverage"
+	@echo "  docs       - 📚 Build the documentation"
 	@echo "  help       - ❓ Display this help message"
-	@echo "==================================================================="
+	@echo "====================================================================="

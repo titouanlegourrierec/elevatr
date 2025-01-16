@@ -66,9 +66,7 @@ def get_elev_raster(
         "Longitude must be between -180 and 180. Latitude must be between -90 and 90."
     )
 
-    assert (
-        isinstance(zoom, int) and 0 <= zoom <= 14
-    ), "zoom must be an integer between 0 and 14."
+    assert isinstance(zoom, int) and 0 <= zoom <= 14, "zoom must be an integer between 0 and 14."
     assert clip in ["bbox", "tile"], "clip must be either 'bbox' or 'tile'."
     assert isinstance(cache_folder, str), "cache_folder must be a string."
     assert isinstance(use_cache, bool), "use_cache must be a boolean."
@@ -81,9 +79,7 @@ def get_elev_raster(
     if settings.ask_confirmation:  # pragma: no cover
         size = _estimate_files_size(locations, zoom)
         if size > settings.min_size_for_confirmation:
-            confirmation = input(
-                f"The estimated file size is {int(size)} Go. Do you want to continue? (y/n)"
-            )
+            confirmation = input(f"The estimated file size is {int(size)} Go. Do you want to continue? (y/n)")
             if confirmation.lower() != "y":
                 print("Operation aborted by the user.")
                 if delete_cache:

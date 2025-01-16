@@ -56,13 +56,8 @@ def _get_aws_terrain(
                 if "image/tif" not in response.headers.get("Content-Type", ""):
                     raise ValueError(f"Invalid file type for URL {url}")
 
-                imagery_sources = response.headers.get(
-                    "x-amz-meta-x-imagery-sources", ""
-                )
-                imagery_sources_set = {
-                    source.split("/")[0].strip()
-                    for source in imagery_sources.split(",")
-                }
+                imagery_sources = response.headers.get("x-amz-meta-x-imagery-sources", "")
+                imagery_sources_set = {source.split("/")[0].strip() for source in imagery_sources.split(",")}
 
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
                 with open(destination, "wb") as file:
@@ -72,9 +67,7 @@ def _get_aws_terrain(
                 # Update the TIF file metadata with imagery sources
                 with rasterio.open(destination, "r+") as dataset:
                     metadata = dataset.meta.copy()
-                    metadata.update(
-                        {"imagery_sources": ", ".join(sorted(imagery_sources_set))}
-                    )
+                    metadata.update({"imagery_sources": ", ".join(sorted(imagery_sources_set))})
                     dataset.update_tags(**metadata)
 
             return destination
@@ -94,10 +87,7 @@ def _get_aws_terrain(
 
     # Define the base URL and assemble tile URLs
     tiles_df = _get_tile_xy(bbx, zoom)
-    urls = [
-        f"{BASE_URL}/{zoom}/{tile.tile_x}/{tile.tile_y}.tif"
-        for tile in tiles_df.to_records(index=False)
-    ]
+    urls = [f"{BASE_URL}/{zoom}/{tile.tile_x}/{tile.tile_y}.tif" for tile in tiles_df.to_records(index=False)]
 
     # Separate cached and uncached tiles
     cached_files, uncached_urls = _filter_cached_and_uncached(urls)

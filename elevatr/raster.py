@@ -140,9 +140,7 @@ class Raster:
         """
         valid_compressions = [None, "lzw", "packbits", "deflate", "zstd", "lzma"]
         if compress not in valid_compressions:
-            raise ValueError(
-                f"Invalid compression type: {compress}. Valid options are {valid_compressions}"
-            )
+            raise ValueError(f"Invalid compression type: {compress}. Valid options are {valid_compressions}")
 
         self.meta.update(compress=compress)
         with rasterio.open(path, "w", **self.meta) as dst:
@@ -218,11 +216,7 @@ class Raster:
             # Write faces
             for y in range(0, height - reduce_quality, reduce_quality):
                 for x in range(0, width - reduce_quality, reduce_quality):
-                    v1 = (
-                        (y // reduce_quality) * (width // reduce_quality)
-                        + (x // reduce_quality)
-                        + 1
-                    )
+                    v1 = (y // reduce_quality) * (width // reduce_quality) + (x // reduce_quality) + 1
                     v2 = v1 + 1
                     v3 = v1 + (width // reduce_quality)
                     v4 = v3 + 1
