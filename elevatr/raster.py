@@ -90,9 +90,9 @@ class Raster:
 
         data = np.where(self.data < 0, np.nan, self.data) if clip_zero else self.data
 
-        cmap = plt.get_cmap(cmap) if isinstance(cmap, str) else cmap
+        cmap = plt.get_cmap(cmap) if isinstance(cmap, str) else cmap  # type: ignore
         if cmap is not None:
-            cmap.set_bad(color=clip_color)
+            cmap.set_bad(color=clip_color)  # type: ignore
 
         extent = plotting_extent(self.data, self.transform)
         fig, ax = plt.subplots(figsize=figsize)

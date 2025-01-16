@@ -173,8 +173,8 @@ def _convert_bbox_crs(
     (-572182.1826774261, 5061139.118730165, 1064214.3319836953, 6637229.1478071)
     """
 
-    crs_from = CRS.from_epsg(int(crs_from.split(":")[1]))
-    crs_to = CRS.from_epsg(int(crs_to.split(":")[1]))
+    crs_from = CRS.from_epsg(int(crs_from.split(":")[1]))  # type: ignore
+    crs_to = CRS.from_epsg(int(crs_to.split(":")[1]))  # type: ignore
 
     transformer = Transformer.from_crs(crs_from, crs_to)
 
