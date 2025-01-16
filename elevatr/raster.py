@@ -180,6 +180,7 @@ class Raster:
         clip_zero: bool = False,
         zscale: float = 1.0,
         reduce_quality: int = 1,
+        solid: bool = False,
     ):
         """
         Write the raster data to an OBJ file.
@@ -196,6 +197,8 @@ class Raster:
         reduce_quality : int, optional
             The factor to reduce the quality of the mesh. Increase this integer value (greater than 1)
             to reduce the quality, by default 1.
+        solid : bool, optional
+            Whether to add a base below the surface to create a solid object, by default False.
         """
         if clip_zero:
             data = np.where(self.data < 0, np.nan, self.data)
@@ -203,6 +206,7 @@ class Raster:
             data = self.data
 
         height, width = data.shape
+        min_z = np.nanmin(data) * zscale if solid else 0  # Minimum z-value
 
         with open(output_path, "w") as f:
             # Write vertices
@@ -213,6 +217,12 @@ class Raster:
                         z = 0  # Handle NaN values
                     f.write(f"v {x} {height - 1 - y} {z}\n")  # Invert y-axis
 
+            if solid:
+                # Write base vertices
+                for y in range(0, height, reduce_quality):
+                    for x in range(0, width, reduce_quality):
+                        f.write(f"v {x} {height - 1 - y} {min_z}\n")  # Base vertex
+
             # Write faces
             for y in range(0, height - reduce_quality, reduce_quality):
                 for x in range(0, width - reduce_quality, reduce_quality):
@@ -221,3 +231,37 @@ class Raster:
                     v3 = v1 + (width // reduce_quality)
                     v4 = v3 + 1
                     f.write(f"f {v1} {v3} {v4} {v2}\n")
+
+            if solid:
+                base_offset = (height // reduce_quality) * (width // reduce_quality)
+                # Write side faces
+                for y in range(0, height - reduce_quality, reduce_quality):
+                    for x in range(0, width - reduce_quality, reduce_quality):
+                        v1 = (y // reduce_quality) * (width // reduce_quality) + (x // reduce_quality) + 1
+                        v2 = v1 + 1
+                        v3 = v1 + (width // reduce_quality)
+                        v4 = v3 + 1
+                        bv1 = v1 + base_offset
+                        bv2 = v2 + base_offset
+                        bv3 = v3 + base_offset
+                        bv4 = v4 + base_offset
+                        f.write(f"f {v1} {v2} {bv2} {bv1}\n")
+                        f.write(f"f {v2} {v4} {bv4} {bv2}\n")
+                        f.write(f"f {v4} {v3} {bv3} {bv4}\n")
+                        f.write(f"f {v3} {v1} {bv1} {bv3}\n")
+
+                # Write bottom face
+                bottom_vertices = [
+                    (0, 0),
+                    (width - reduce_quality, 0),
+                    (width - reduce_quality, height - reduce_quality),
+                    (0, height - reduce_quality),
+                ]
+                bottom_indices = [
+                    (y // reduce_quality) * (width // reduce_quality)
+                    + (x // reduce_quality)
+                    + 1
+                    + base_offset
+                    for x, y in bottom_vertices
+                ]
+                f.write(f"f {' '.join(map(str, bottom_indices))}\n")

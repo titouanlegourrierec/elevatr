@@ -483,7 +483,7 @@ def test_raster_to_obj(mock_raster_data):
 
     with tempfile.NamedTemporaryFile(suffix=".obj", delete=False) as temp_obj:
         temp_obj.close()
-        raster.to_obj(temp_obj.name, clip_zero=True, zscale=2.0, reduce_quality=1)
+        raster.to_obj(temp_obj.name, clip_zero=True, zscale=2.0, reduce_quality=1, solid=True)
 
         with open(temp_obj.name, "r") as f:
             obj_content = f.read()
