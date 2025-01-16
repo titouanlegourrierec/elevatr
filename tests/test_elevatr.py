@@ -484,3 +484,21 @@ def test_raster_save_and_load(mock_raster_data):
             assert src.meta["crs"] == raster.meta["crs"]
 
     os.remove(temp_tif.name)
+
+
+def test_raster_to_obj(mock_raster_data):
+    """Test the to_obj method of the Raster class."""
+    data, meta = mock_raster_data
+    raster = Raster(data=data, meta=meta)
+
+    with tempfile.NamedTemporaryFile(suffix=".obj", delete=False) as temp_obj:
+        temp_obj.close()
+        raster.to_obj(temp_obj.name, clip_zero=True, zscale=2.0, reduce_quality=1)
+
+        with open(temp_obj.name, "r") as f:
+            obj_content = f.read()
+            assert "v 0 1" in obj_content  # Check vertices
+            assert "v 1 0" in obj_content
+            assert "f 1 3 4 2" in obj_content  # Check faces
+
+    os.remove(temp_obj.name)

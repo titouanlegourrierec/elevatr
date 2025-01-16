@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased]
+### Added
+- Add `to_obj` method to `Raster` class to convert the raster to a 3D object.
+
 ## 0.3.0 - 2025-01-08
 ### Added
 - Ask for user confirmation before downloading large files.

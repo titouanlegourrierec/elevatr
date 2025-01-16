@@ -175,3 +175,55 @@ class Raster:
                 float(self.transform[5]),
             )
             self.resolution = self._resolution()
+
+    def to_obj(
+        self,
+        output_path: str,
+        clip_zero: bool = False,
+        zscale: float = 1.0,
+        reduce_quality: int = 1,
+    ):
+        """
+        Write the raster data to an OBJ file.
+
+        Parameters
+        ----------
+        output_path : str
+            The path to write the OBJ file.
+        clip_zero : bool, optional
+            Whether to clip negative values to zero (sea level), by default False.
+        zscale : float, optional
+            The scaling factor to apply to the z-axis. Decrease to attenuate elevation and increase
+            to accentuate it, by default 1.0.
+        reduce_quality : int, optional
+            The factor to reduce the quality of the mesh. Increase this integer value (greater than 1)
+            to reduce the quality, by default 1.
+        """
+        if clip_zero:
+            data = np.where(self.data < 0, np.nan, self.data)
+        else:
+            data = self.data
+
+        height, width = data.shape
+
+        with open(output_path, "w") as f:
+            # Write vertices
+            for y in range(0, height, reduce_quality):
+                for x in range(0, width, reduce_quality):
+                    z = data[y, x] * zscale
+                    if np.isnan(z):
+                        z = 0  # Handle NaN values
+                    f.write(f"v {x} {height - 1 - y} {z}\n")  # Invert y-axis
+
+            # Write faces
+            for y in range(0, height - reduce_quality, reduce_quality):
+                for x in range(0, width - reduce_quality, reduce_quality):
+                    v1 = (
+                        (y // reduce_quality) * (width // reduce_quality)
+                        + (x // reduce_quality)
+                        + 1
+                    )
+                    v2 = v1 + 1
+                    v3 = v1 + (width // reduce_quality)
+                    v4 = v3 + 1
+                    f.write(f"f {v1} {v3} {v4} {v2}\n")
