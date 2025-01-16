@@ -52,12 +52,8 @@ def test_lonlat_to_tilenum(lon_deg, lat_deg, zoom, expected):
 def test_get_tile_xy_zoom_levels(bbx, zoom, max_tile_x, max_tile_y):
     """Test if the tiles are correctly filtered based on zoom level."""
     result = _get_tile_xy(bbx, zoom)
-    assert (
-        result["tile_x"] <= max_tile_x
-    ).all(), f"Tile x-coordinates exceed max for zoom {zoom}"
-    assert (
-        result["tile_y"] <= max_tile_y
-    ).all(), f"Tile y-coordinates exceed max for zoom {zoom}"
+    assert (result["tile_x"] <= max_tile_x).all(), f"Tile x-coordinates exceed max for zoom {zoom}"
+    assert (result["tile_y"] <= max_tile_y).all(), f"Tile y-coordinates exceed max for zoom {zoom}"
 
 
 # Test cases for raster_operations
@@ -237,9 +233,7 @@ def test_get_elev_raster_delete_cache(mock_bbox, mock_zoom, mock_cache_folder):
     """Test get_elev_raster with cache deletion."""
     with patch("shutil.rmtree") as mock_rmtree, patch(
         "elevatr.downloader._get_aws_terrain"
-    ) as mock_get_aws_terrain, patch(
-        "elevatr.raster_operations._merge_rasters"
-    ) as mock_merge_rasters:
+    ) as mock_get_aws_terrain, patch("elevatr.raster_operations._merge_rasters") as mock_merge_rasters:
         mock_get_aws_terrain.return_value = []
         mock_merge_rasters.return_value = (np.zeros((1, 2, 2)), {"crs": "EPSG:3857"})
 
@@ -274,9 +268,7 @@ def test_get_elev_raster_invalid_zoom(mock_bbox):
     """Test get_elev_raster with invalid zoom level."""
     invalid_zoom = 20  # Out of valid range
 
-    with pytest.raises(
-        AssertionError, match="zoom must be an integer between 0 and 14"
-    ):
+    with pytest.raises(AssertionError, match="zoom must be an integer between 0 and 14"):
         get_elev_raster(
             locations=mock_bbox,
             zoom=invalid_zoom,
@@ -379,9 +371,7 @@ def test_raster_show_clip_zero():
     with patch("matplotlib.pyplot.show") as mock_show:
         raster.show(cmap="viridis", clip_zero=True)
         clipped_data = np.where(data[0] < 0, np.nan, data[0])
-        assert np.array_equal(
-            raster.to_numpy()[raster.to_numpy() >= 0], clipped_data[clipped_data >= 0]
-        )
+        assert np.array_equal(raster.to_numpy()[raster.to_numpy() >= 0], clipped_data[clipped_data >= 0])
         mock_show.assert_called_once()
 
 
