@@ -215,6 +215,7 @@ def test_get_elev_raster_valid_inputs(mock_bbox, mock_zoom, mock_cache_folder):
         raster = get_elev_raster(
             locations=mock_bbox,
             zoom=mock_zoom,
+            crs="EPSG:4326",
             cache_folder=mock_cache_folder,
             use_cache=True,
             delete_cache=False,

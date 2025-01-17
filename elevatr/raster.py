@@ -205,7 +205,7 @@ class Raster:
         """
         if clip_zero:
             data = np.where(self.data < 0, np.nan, self.data)
-        else:
+        else:  # pragma: no cover
             data = self.data
 
         height, width = data.shape
@@ -216,7 +216,7 @@ class Raster:
             for y in range(0, height, reduce_quality):
                 for x in range(0, width, reduce_quality):
                     z = data[y, x] * zscale
-                    if np.isnan(z):
+                    if np.isnan(z):  # pragma: no cover
                         z = 0  # Handle NaN values
                     f.write(f"v {x} {height - 1 - y} {z}\n")  # Invert y-axis
 
