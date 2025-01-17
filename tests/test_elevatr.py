@@ -492,3 +492,44 @@ def test_raster_to_obj(mock_raster_data):
             assert "f 1 3 4 2" in obj_content  # Check faces
 
     os.remove(temp_obj.name)
+
+
+def test_raster_to_obj_with_texture(mock_raster_data):
+    """Test the to_obj method of the Raster class with texture."""
+    data, meta = mock_raster_data
+    raster = Raster(data=data, meta=meta)
+
+    with tempfile.NamedTemporaryFile(suffix=".obj", delete=False) as temp_obj, tempfile.NamedTemporaryFile(
+        suffix=".png", delete=False
+    ) as temp_texture:
+        temp_obj.close()
+        temp_texture.close()
+
+        # Create a dummy texture file
+        with open(temp_texture.name, "wb") as f:
+            f.write(b"\x89PNG\r\n\x1a\n")
+
+        raster.to_obj(
+            temp_obj.name,
+            clip_zero=True,
+            zscale=2.0,
+            reduce_quality=1,
+            solid=True,
+            texture_path=temp_texture.name,
+        )
+
+        with open(temp_obj.name, "r") as f:
+            obj_content = f.read()
+            assert "v 0 1" in obj_content  # Check vertices
+            assert "v 1 0" in obj_content
+            assert "f 1/1 3/3 4/4 2/2" in obj_content  # Check faces with texture coordinates
+            assert "mtllib" in obj_content  # Check material library
+
+        with open(temp_obj.name.replace(".obj", ".mtl"), "r") as f:
+            mtl_content = f.read()
+            assert "newmtl material_0" in mtl_content
+            assert f"map_Kd {temp_texture.name}" in mtl_content
+
+    os.remove(temp_obj.name)
+    os.remove(temp_texture.name)
+    os.remove(temp_obj.name.replace(".obj", ".mtl"))

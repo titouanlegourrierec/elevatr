@@ -181,6 +181,7 @@ class Raster:
         zscale: float = 1.0,
         reduce_quality: int = 1,
         solid: bool = False,
+        texture_path: Optional[str] = None,
     ):
         """
         Write the raster data to an OBJ file.
@@ -199,6 +200,8 @@ class Raster:
             to reduce the quality, by default 1.
         solid : bool, optional
             Whether to add a base below the surface to create a solid object, by default False.
+        texture_path : str, optional
+            The path to the texture image file, by default None.
         """
         if clip_zero:
             data = np.where(self.data < 0, np.nan, self.data)
@@ -223,6 +226,14 @@ class Raster:
                     for x in range(0, width, reduce_quality):
                         f.write(f"v {x} {height - 1 - y} {min_z}\n")  # Base vertex
 
+            # Write texture coordinates if texture_path is provided
+            if texture_path:
+                for y in range(0, height, reduce_quality):
+                    for x in range(0, width, reduce_quality):
+                        u = x / (width - 1)
+                        v = (height - 1 - y) / (height - 1)
+                        f.write(f"vt {u} {v}\n")
+
             # Write faces
             for y in range(0, height - reduce_quality, reduce_quality):
                 for x in range(0, width - reduce_quality, reduce_quality):
@@ -230,7 +241,10 @@ class Raster:
                     v2 = v1 + 1
                     v3 = v1 + (width // reduce_quality)
                     v4 = v3 + 1
-                    f.write(f"f {v1} {v3} {v4} {v2}\n")
+                    if texture_path:
+                        f.write(f"f {v1}/{v1} {v3}/{v3} {v4}/{v4} {v2}/{v2}\n")
+                    else:
+                        f.write(f"f {v1} {v3} {v4} {v2}\n")
 
             if solid:
                 base_offset = (height // reduce_quality) * (width // reduce_quality)
@@ -265,3 +279,12 @@ class Raster:
                     for x, y in bottom_vertices
                 ]
                 f.write(f"f {' '.join(map(str, bottom_indices))}\n")
+
+        # Write the material file if texture_path is provided
+        if texture_path:
+            mtl_path = output_path.replace(".obj", ".mtl")
+            with open(mtl_path, "w") as mtl_file:
+                mtl_file.write("newmtl material_0\n")
+                mtl_file.write(f"map_Kd {texture_path}\n")
+            with open(output_path, "a") as f:
+                f.write(f"mtllib {mtl_path}\n")
