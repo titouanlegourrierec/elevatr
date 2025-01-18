@@ -40,7 +40,7 @@ def _merge_rasters(raster_list: List[str]) -> Tuple[np.ndarray, dict]:
             rasters = [first_raster] + [
                 stack.enter_context(rasterio.open(raster)) for raster in raster_list[1:]
             ]
-            mosaic, out_trans = merge(rasters)
+            mosaic, out_trans = merge(rasters, nodata=-9999)
 
             # Collect imagery sources from each raster
             for raster in rasters:
@@ -55,6 +55,7 @@ def _merge_rasters(raster_list: List[str]) -> Tuple[np.ndarray, dict]:
                     "height": mosaic.shape[1],
                     "width": mosaic.shape[2],
                     "transform": out_trans,
+                    "nodata": -9999,
                     "imagery_sources": ", ".join(sorted(imagery_sources_set)),
                 }
             )
