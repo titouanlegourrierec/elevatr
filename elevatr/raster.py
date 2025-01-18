@@ -204,6 +204,12 @@ class Raster:
         else:  # pragma: no cover
             data = self.data
 
+        if self.resolution:
+            res = (self.resolution["x"] + self.resolution["y"]) / 2
+            zscale = (1 / res) * zscale
+        else:
+            raise ValueError("Resolution is not defined.")
+
         height, width = data.shape
         min_z = np.nanmin(data) * zscale if solid else 0  # Minimum z-value
 
