@@ -533,3 +533,41 @@ def test_raster_to_obj_with_texture(mock_raster_data):
     os.remove(temp_obj.name)
     os.remove(temp_texture.name)
     os.remove(temp_obj.name.replace(".obj", ".mtl"))
+
+
+def test_download_basemap(mock_raster_data, tmp_path):
+    """Test the _download_basemap method of the Raster class."""
+    data, meta = mock_raster_data
+    raster = Raster(data=data, meta=meta)
+    raster.bounds = (-122.5, 37.5, -122.0, 38.0)
+    file_path = tmp_path / "basemap.png"
+
+    raster._download_basemap(file_path=str(file_path), zoom="auto")
+
+    assert file_path.exists(), "Basemap image should be saved."
+
+    os.remove(file_path)
+
+
+def test_quit(mock_raster_data):
+    """Test the quit method of the Raster class."""
+    # Create a temporary directory to act as the cache folder
+    temp_dir = tempfile.mkdtemp()
+
+    try:
+        # Ensure the directory exists
+        assert os.path.exists(temp_dir), "Temporary directory should exist."
+
+        # Create a Raster object (assuming the quit method is part of this class)
+        data, meta = mock_raster_data
+        raster = Raster(data, meta)
+
+        # Call the quit method
+        raster.quit(cache_folder=temp_dir)
+
+        # Verify the directory has been deleted
+        assert not os.path.exists(temp_dir), "Temporary directory should be deleted."
+    finally:
+        # Ensure the temporary directory is deleted
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)

@@ -4,6 +4,7 @@ matplotlib
 numpy
 pandas
 pyproj
+pyvista
 rasterio
 requests
 rioxarray

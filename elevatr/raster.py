@@ -1,3 +1,6 @@
+import hashlib
+import os
+import shutil
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -5,6 +8,7 @@ import contextily as ctx
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+import pyvista as pv
 import rasterio
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from pyproj import CRS
@@ -320,3 +324,167 @@ class Raster:
 
         plt.savefig(file_path, bbox_inches="tight", pad_inches=0, dpi=300)
         plt.close(fig)
+
+    def show_3d(
+        self,
+        clip_zero: bool = False,
+        zscale: float = 1.0,
+        solid: bool = False,
+        basemap_quality: Union[str, int] = "auto",
+        transparent_background: bool = False,
+        render_quality: int = 5,
+        phi: float = 30,
+        theta: float = 0,
+        zoom: float = 1,
+        light_intensity: float = 0.5,
+        file_path: Optional[str] = None,
+        cache_folder: str = "./cache",
+        show: bool = True,
+        verbose: bool = True,
+    ):  # pragma: no cover
+        """
+        Display the raster data as a 3D model.
+
+        Parameters
+        ----------
+        clip_zero : bool, optional
+            Whether to clip negative values to zero (sea level), by default False.
+        zscale : float, optional
+            The scaling factor to apply to the z-axis. Decrease to attenuate elevation and increase
+            to accentuate it, by default 1.0.
+        solid : bool, optional
+            Whether to add a base below the surface to create a solid object, by default False.
+        basemap_quality : Union[str, int], optional
+            The zoom level of the basemap image, by default 'auto'. Big zoom levels will result in
+            higher resolution images.
+        transparent_background : bool, optional
+            Whether to use a transparent background for the rendered image, by default False.
+        render_quality : int, optional
+            The quality of the rendered image, by default 5. Higher values will result in higher resolution images.
+        phi : float, optional
+            The elevation angle in degrees, by default 30.
+        theta : float, optional
+            The angle of rotation around the z-axis in degrees, by default 0.
+        zoom : float, optional
+            The zoom level of the camera, by default 1.
+        light_intensity : float, optional
+            The intensity of the light source, by default 0.5.
+        file_path : str, optional
+            The path to save the rendered image to, by default None.
+        cache_folder : str, optional
+            The folder to store the cached basemap image, OBJ file, and rendered image, by default "./cache".
+        show : bool, optional
+            Whether to display the rendered image, by default True.
+        verbose : bool, optional
+            Whether to display progress messages, by default True.
+
+        Notes
+        -----
+        We use sha256 hashes to cache the basemap image, OBJ file, and rendered image. This allows us to avoid downloading
+        the same basemap image multiple times and to avoid regenerating the OBJ file and rendering the image when the input
+        parameters are the same.
+        """
+
+        cache_folder = os.path.abspath(cache_folder)
+        os.makedirs(cache_folder, exist_ok=True)
+
+        # Download basemap image
+        basemap_hash = hashlib.sha256(
+            str(
+                {
+                    "bounds": self.bounds,
+                    "zoom": basemap_quality,
+                }
+            ).encode()
+        ).hexdigest()
+        basemap_path = os.path.join(cache_folder, f"basemap_{basemap_hash}.png")
+        if not os.path.exists(basemap_path):
+            if verbose:
+                print("Downloading basemap image...")
+            self._download_basemap(basemap_path, zoom=basemap_quality)
+
+        # Generate OBJ file
+        obj_hash = hashlib.sha256(
+            str(
+                {
+                    "bounds": self.bounds,
+                    "clip_zero": clip_zero,
+                    "zscale": zscale,
+                    "solid": solid,
+                }
+            ).encode()
+        ).hexdigest()
+        obj_path = os.path.join(cache_folder, f"raster_{obj_hash}.obj")
+
+        if not os.path.exists(obj_path):
+            if verbose:
+                print("Generating 3D model...")
+            self.to_obj(
+                output_path=obj_path,
+                clip_zero=clip_zero,
+                zscale=zscale,
+                solid=solid,
+                texture_path=basemap_path,
+            )
+
+        # Display OBJ file
+        render_hash = hashlib.sha256(
+            str(
+                {
+                    "obj_path": obj_path,
+                    "basemap_path": basemap_path,
+                    "phi": phi,
+                    "theta": theta,
+                    "zoom": zoom,
+                    "light_intensity": light_intensity,
+                    "transparent_background": transparent_background,
+                    "render_quality": render_quality,
+                }
+            ).encode()
+        ).hexdigest()
+        render_path = os.path.join(cache_folder, f"render_{render_hash}.png")
+
+        if not os.path.exists(render_path):
+            if verbose:
+                print("Rendering 3D model...")
+
+            mesh = pv.read(obj_path)
+            texture = pv.read_texture(basemap_path)
+
+            bounds = mesh.bounds
+            x_center = (bounds[0] + bounds[1]) / 2
+            y_center = (bounds[2] + bounds[3]) / 2
+            z_center = (bounds[4] + bounds[5]) / 2
+            max_extent = max(bounds[1] - bounds[0], bounds[3] - bounds[2], bounds[5] - bounds[4])
+            camera_distance = 2 * max_extent
+
+            p = pv.Plotter(off_screen=True)
+            p.add_mesh(mesh, texture=texture)
+            p.camera.position = (x_center + camera_distance, y_center + camera_distance, z_center)
+            p.camera.focal_point = (x_center, y_center, z_center)
+            p.camera.zoom(zoom)
+            p.camera.elevation = phi
+            p.camera.azimuth = theta
+
+            light = pv.Light()
+            light.intensity = light_intensity
+            p.add_light(light)
+
+            p.screenshot(render_path, transparent_background=transparent_background, scale=render_quality)
+            p.close()
+
+        if file_path:  # pragma: no cover
+            shutil.copy(render_path, file_path)
+
+        if show:
+            plt.figure(figsize=(10, 10))
+            plt.imshow(plt.imread(render_path))
+            plt.axis("off")
+            plt.tight_layout()
+            plt.show()
+
+    def quit(self, cache_folder: str = "./cache") -> None:
+        """Delete the cache directory."""
+        cache_folder = os.path.abspath(cache_folder)
+        if os.path.exists(cache_folder):
+            shutil.rmtree(cache_folder)
