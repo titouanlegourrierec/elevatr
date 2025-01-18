@@ -15,6 +15,7 @@ from pyproj import CRS
 from rasterio.plot import plotting_extent
 from shapely.geometry import box
 
+from . import settings
 from .raster_operations import _reproject_raster
 
 
@@ -338,7 +339,7 @@ class Raster:
         zoom: float = 1,
         light_intensity: float = 0.5,
         file_path: Optional[str] = None,
-        cache_folder: str = "./cache",
+        cache_folder: Optional[str] = None,
         show: bool = True,
         verbose: bool = True,
     ):  # pragma: no cover
@@ -372,7 +373,9 @@ class Raster:
         file_path : str, optional
             The path to save the rendered image to, by default None.
         cache_folder : str, optional
-            The folder to store the cached basemap image, OBJ file, and rendered image, by default "./cache".
+            The folder to store the cached basemap image, OBJ file, and rendered image, by default settings.cache_folder.
+            NOTE: If you want to change the cache folder, it is recommended to set it with settings.cache_folder = "your_folder"
+            just after the import to standardize the cache folder across the package.
         show : bool, optional
             Whether to display the rendered image, by default True.
         verbose : bool, optional
@@ -385,6 +388,7 @@ class Raster:
         parameters are the same.
         """
 
+        cache_folder = cache_folder or settings.cache_folder
         cache_folder = os.path.abspath(cache_folder)
         os.makedirs(cache_folder, exist_ok=True)
 
@@ -483,8 +487,9 @@ class Raster:
             plt.tight_layout()
             plt.show()
 
-    def quit(self, cache_folder: str = "./cache") -> None:
+    def quit(self, cache_folder: Optional[str] = None) -> None:
         """Delete the cache directory."""
+        cache_folder = cache_folder or settings.cache_folder
         cache_folder = os.path.abspath(cache_folder)
         if os.path.exists(cache_folder):
             shutil.rmtree(cache_folder)

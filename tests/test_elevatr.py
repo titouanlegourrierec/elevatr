@@ -567,7 +567,7 @@ def test_quit(mock_raster_data):
 
         # Verify the directory has been deleted
         assert not os.path.exists(temp_dir), "Temporary directory should be deleted."
-    finally:
+    finally:  # pragma: no cover
         # Ensure the temporary directory is deleted
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)

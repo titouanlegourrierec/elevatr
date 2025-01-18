@@ -14,7 +14,7 @@ def get_elev_raster(
     zoom: int,
     crs: Optional[str] = "EPSG:3857",  # Web Mercator projection
     clip: Optional[str] = "bbox",
-    cache_folder: Optional[str] = "./cache",
+    cache_folder: Optional[str] = None,
     use_cache: Optional[bool] = True,
     delete_cache: Optional[bool] = True,
     verbose: Optional[bool] = True,
@@ -33,7 +33,9 @@ def get_elev_raster(
     clip : str, optional
         Clip the raster to the bounding box ('bbox') or the tile ('tile'), by default 'bbox'.
     cache_folder : str, optional
-        Folder to store the downloaded tiles, by default "./cache"
+        Folder to store the downloaded tiles, by default settings.cache_folder. NOTE: If you want to
+        change the cache folder, it is recommended to set it with settings.cache_folder = "your_folder"
+        just after the import to standardize the cache folder across the package.
     use_cache : bool, optional
         Use the cache if available, by default True
     delete_cache : bool, optional
@@ -68,11 +70,12 @@ def get_elev_raster(
 
     assert isinstance(zoom, int) and 0 <= zoom <= 14, "zoom must be an integer between 0 and 14."
     assert clip in ["bbox", "tile"], "clip must be either 'bbox' or 'tile'."
-    assert isinstance(cache_folder, str), "cache_folder must be a string."
+    assert isinstance(cache_folder, (str, type(None))), "cache_folder must be a string."
     assert isinstance(use_cache, bool), "use_cache must be a boolean."
     assert isinstance(delete_cache, bool), "delete_cache must be a boolean."
     assert isinstance(verbose, bool), "verbose must be a boolean."
 
+    cache_folder = cache_folder or settings.cache_folder
     if not os.path.exists(cache_folder):
         os.makedirs(cache_folder)
 
