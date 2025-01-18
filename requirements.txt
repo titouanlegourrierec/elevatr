@@ -1,3 +1,5 @@
+contextily
+geopandas
 matplotlib
 numpy
 pandas
@@ -5,4 +7,5 @@ pyproj
 rasterio
 requests
 rioxarray
+shapely
 tqdm

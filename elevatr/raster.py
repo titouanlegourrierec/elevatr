@@ -1,12 +1,15 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
+import contextily as ctx
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from pyproj import CRS
 from rasterio.plot import plotting_extent
+from shapely.geometry import box
 
 from .raster_operations import _reproject_raster
 
@@ -207,7 +210,7 @@ class Raster:
         if self.resolution:
             res = (self.resolution["x"] + self.resolution["y"]) / 2
             zscale = (1 / res) * zscale
-        else:
+        else:  # pragma: no cover
             raise ValueError("Resolution is not defined.")
 
         height, width = data.shape
@@ -284,3 +287,36 @@ class Raster:
                 mtl_file.write(f"map_Kd {texture_path}\n")
             with open(output_path, "a") as f:
                 f.write(f"mtllib {mtl_path}\n")
+
+    def _download_basemap(
+        self,
+        file_path: str,
+        zoom: Union[str, int] = "auto",
+    ) -> None:
+        """
+        Download a basemap image of the raster data extent.
+
+        Parameters
+        ----------
+        file_path : str
+            The path to save the basemap image to.
+        zoom : Union[str, int], optional
+            The zoom level of the basemap image, by default 'auto'. Big zoom levels will result in
+            higher resolution images.
+        """
+
+        basemap_bounds = self.bounds
+        basemap_bounds = box(*basemap_bounds)
+
+        gdf = gpd.GeoDataFrame({"geometry": [basemap_bounds]}, crs="EPSG:3857")
+        bounds = gdf.bounds
+
+        fig, ax = plt.subplots()
+        ax.set_xlim(bounds["minx"][0], bounds["maxx"][0])
+        ax.set_ylim(bounds["miny"][0], bounds["maxy"][0])
+        ax.axis("off")
+
+        ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery, attribution=False, zoom=zoom)
+
+        plt.savefig(file_path, bbox_inches="tight", pad_inches=0, dpi=300)
+        plt.close(fig)
