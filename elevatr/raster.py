@@ -179,7 +179,6 @@ class Raster:
         output_path: str,
         clip_zero: bool = False,
         zscale: float = 1.0,
-        reduce_quality: int = 1,
         solid: bool = False,
         texture_path: Optional[str] = None,
     ):
@@ -195,9 +194,6 @@ class Raster:
         zscale : float, optional
             The scaling factor to apply to the z-axis. Decrease to attenuate elevation and increase
             to accentuate it, by default 1.0.
-        reduce_quality : int, optional
-            The factor to reduce the quality of the mesh. Increase this integer value (greater than 1)
-            to reduce the quality, by default 1.
         solid : bool, optional
             Whether to add a base below the surface to create a solid object, by default False.
         texture_path : str, optional
@@ -213,8 +209,8 @@ class Raster:
 
         with open(output_path, "w") as f:
             # Write vertices
-            for y in range(0, height, reduce_quality):
-                for x in range(0, width, reduce_quality):
+            for y in range(0, height):
+                for x in range(0, width):
                     z = data[y, x] * zscale
                     if np.isnan(z):  # pragma: no cover
                         z = 0  # Handle NaN values
@@ -222,24 +218,24 @@ class Raster:
 
             if solid:
                 # Write base vertices
-                for y in range(0, height, reduce_quality):
-                    for x in range(0, width, reduce_quality):
+                for y in range(0, height):
+                    for x in range(0, width):
                         f.write(f"v {x} {height - 1 - y} {min_z}\n")  # Base vertex
 
             # Write texture coordinates if texture_path is provided
             if texture_path:
-                for y in range(0, height, reduce_quality):
-                    for x in range(0, width, reduce_quality):
+                for y in range(0, height):
+                    for x in range(0, width):
                         u = x / (width - 1)
                         v = (height - 1 - y) / (height - 1)
                         f.write(f"vt {u} {v}\n")
 
             # Write faces
-            for y in range(0, height - reduce_quality, reduce_quality):
-                for x in range(0, width - reduce_quality, reduce_quality):
-                    v1 = (y // reduce_quality) * (width // reduce_quality) + (x // reduce_quality) + 1
+            for y in range(0, height - 1):
+                for x in range(0, width - 1):
+                    v1 = y * width + x + 1
                     v2 = v1 + 1
-                    v3 = v1 + (width // reduce_quality)
+                    v3 = v1 + width
                     v4 = v3 + 1
                     if texture_path:
                         f.write(f"f {v1}/{v1} {v3}/{v3} {v4}/{v4} {v2}/{v2}\n")
@@ -247,13 +243,13 @@ class Raster:
                         f.write(f"f {v1} {v3} {v4} {v2}\n")
 
             if solid:
-                base_offset = (height // reduce_quality) * (width // reduce_quality)
+                base_offset = height * width
                 # Write side faces
-                for y in range(0, height - reduce_quality, reduce_quality):
-                    for x in range(0, width - reduce_quality, reduce_quality):
-                        v1 = (y // reduce_quality) * (width // reduce_quality) + (x // reduce_quality) + 1
+                for y in range(0, height - 1):
+                    for x in range(0, width - 1):
+                        v1 = y * width + x + 1
                         v2 = v1 + 1
-                        v3 = v1 + (width // reduce_quality)
+                        v3 = v1 + width
                         v4 = v3 + 1
                         bv1 = v1 + base_offset
                         bv2 = v2 + base_offset
@@ -267,17 +263,11 @@ class Raster:
                 # Write bottom face
                 bottom_vertices = [
                     (0, 0),
-                    (width - reduce_quality, 0),
-                    (width - reduce_quality, height - reduce_quality),
-                    (0, height - reduce_quality),
+                    (width - 1, 0),
+                    (width - 1, height - 1),
+                    (0, height - 1),
                 ]
-                bottom_indices = [
-                    (y // reduce_quality) * (width // reduce_quality)
-                    + (x // reduce_quality)
-                    + 1
-                    + base_offset
-                    for x, y in bottom_vertices
-                ]
+                bottom_indices = [y * width + x + 1 + base_offset for x, y in bottom_vertices]
                 f.write(f"f {' '.join(map(str, bottom_indices))}\n")
 
         # Write the material file if texture_path is provided
