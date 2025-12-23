@@ -1,34 +1,47 @@
-# System files
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+# Local History for Visual Studio Code
+.history/
+
+
+# Mac/OSX
 .DS_Store
 
-# IDE files
-.vscode/
 
-# Virtual environments
-env/
-venv/
-.venv/
-
-# Python files
+# Python-generated files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
 
-# Testing and coverage
-.mypy_cache/
-.pytest_cache/
-.coverage
-htmlcov/
 
 # Jupyter Notebook
-.ipynb_checkpoints/
+.ipynb_checkpoints
 
-# Configuration files
-mypy.ini
 
-# Drafts
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+
+# Cache
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+
+# Project specific
 draft/
-
-# Documentation
-docs/build/
+draft.ipynb
