@@ -1,39 +1,36 @@
+# Copyright (c) 2025 Titouan Le Gourrierec
+"""Utility functions for tile calculations and coordinate transformations."""
+
 import math
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
 from pyproj import CRS, Transformer
 
 
-def _lonlat_to_tilenum(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, int]:
-    """Convert geographic coordinates (longitude, latitude) to tile numbers at a specific zoom level.
+MAX_LONGITUDE = 180.0
+TILE_SIZE = 0.15  # Tile size in Mo
 
-    Parameters
-    ----------
-    lon_deg : float
-        Longitude in degrees, ranging from -180 to 180.
-    lat_deg : float
-        Latitude in degrees, ranging from -90 to 90.
-    zoom : int
-        Zoom level, a non-negative integer where higher values correspond to more detailed tiles.
 
-    Returns
-    -------
-    xtile : int
-        The tile number along the x-axis (longitude).
-    ytile : int
-        The tile number along the y-axis (latitude).
+def _lonlat_to_tilenum(lon_deg: float, lat_deg: float, zoom: int) -> tuple[int, int]:
+    """
+    Convert geographic coordinates (longitude, latitude) to tile numbers at a specific zoom level.
 
-    Notes
-    -----
-    - The function uses the Web Mercator projection to map geographic coordinates onto a 2D plane.
-    - Tile indices are clamped to valid ranges: `[0, 2**zoom - 1]`.
-    - The function is based on the Slippy Map tilenames documented here:
-        https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+    Args:
+        lon_deg (float): Longitude in degrees, ranging from -180 to 180.
+        lat_deg (float): Latitude in degrees, ranging from -90 to 90.
+        zoom (int): Zoom level, a non-negative integer where higher values correspond to more detailed tiles.
 
-    Examples
-    --------
+    Returns:
+        tuple[int, int]: A tuple containing the tile numbers along the x-axis and y-axis.
+
+    Notes:
+        - The function uses the Web Mercator projection to map geographic coordinates onto a 2D plane.
+        - Tile indices are clamped to valid ranges: `[0, 2**zoom - 1]`.
+        - The function is based on the Slippy Map tilenames documented here:
+            https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+
+    Examples:
     >>> lonlat_to_tilenum(0, 0, 2)
     (2, 2)
 
@@ -45,8 +42,8 @@ def _lonlat_to_tilenum(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, 
 
     >>> lonlat_to_tilenum(0, -85, 3)
     (4, 7)
-    """
 
+    """
     lon_rad = math.radians(lon_deg)
     lat_rad = math.radians(lat_deg)
 
@@ -61,38 +58,31 @@ def _lonlat_to_tilenum(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, 
     return xtile, ytile
 
 
-def _get_tile_xy(bbx: Tuple[float, float, float, float], zoom: int) -> pd.DataFrame:
-    """Generate a DataFrame of tile coordinates within a bounding box at a specific zoom level.
+def _get_tile_xy(bbx: tuple[float, float, float, float], zoom: int) -> pd.DataFrame:
+    """
+    Generate a DataFrame of tile coordinates within a bounding box at a specific zoom level.
 
-    Parameters
-    ----------
-    bbx : tuple
-        A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
-        xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and
-        maximum latitudes.
-    zoom : int
-        Zoom level, a non-negative integer where higher values correspond to more detailed tiles.
+    Args:
+        bbx (tuple): A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
+            xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and maximum latitudes.
+        zoom (int): Zoom level, a non-negative integer where higher values correspond to more detailed tiles.
 
-    Returns
-    -------
-    pd.DataFrame
-        A DataFrame containing the tile coordinates within the bounding box at the specified zoom level.
-        The DataFrame has two columns:
-        - 'tile_x' : int
-            The tile number along the x-axis (longitude).
-        - 'tile_y' : int
-            The tile number along the y-axis (latitude).
+    Returns:
+        pd.DataFrame: A DataFrame containing the tile coordinates within the bounding box at the specified zoom level.
+            The DataFrame has two columns:
+            - 'tile_x' : int
+                The tile number along the x-axis (longitude).
+            - 'tile_y' : int
+                The tile number along the y-axis (latitude).
 
-    Notes
-    -----
-    - The function normalizes the bounding box coordinates to ensure they are within valid ranges.
-    - Tile indices are clamped to valid ranges: `[0, 2**zoom - 1]`.
-    - The function uses the Web Mercator projection to map geographic coordinates onto a 2D plane.
-    - For zoom levels 0 and 1, the function ensures that the tile coordinates are within the valid range for
-    those zoom levels.
+    Notes:
+        - The function normalizes the bounding box coordinates to ensure they are within valid ranges.
+        - Tile indices are clamped to valid ranges: `[0, 2**zoom - 1]`.
+        - The function uses the Web Mercator projection to map geographic coordinates onto a 2D plane.
+        - For zoom levels 0 and 1, the function ensures that the tile coordinates are within the valid range for
+        those zoom levels.
 
-    Examples
-    --------
+    Examples:
     >>> bbx = (-5.14, 41.33, 9.56, 51.09)
     >>>_get_tile_xy(bbx, 6)
        tile_x  tile_y
@@ -105,15 +95,15 @@ def _get_tile_xy(bbx: Tuple[float, float, float, float], zoom: int) -> pd.DataFr
     6      33      21
     7      33      22
     8      33      23
-    """
 
+    """
     xmin, ymin, xmax, ymax = bbx
 
     # Normalize bounding box coordinates
     xmin, xmax = sorted([xmin, xmax])
     ymin, ymax = sorted([ymin, ymax])
-    xmin = xmin - 360 if xmin > 180 else xmin
-    xmax = xmax - 360 if xmax > 180 else xmax
+    xmin = xmin - 360 if xmin > MAX_LONGITUDE else xmin
+    xmax = xmax - 360 if xmax > MAX_LONGITUDE else xmax
 
     # Convert to float
     xmin, ymin, xmax, ymax = float(xmin), float(ymin), float(xmax), float(ymax)
@@ -136,7 +126,7 @@ def _get_tile_xy(bbx: Tuple[float, float, float, float], zoom: int) -> pd.DataFr
     )
 
     if zoom == 1:
-        tiles = tiles[(tiles["tile_x"] < 2) & (tiles["tile_y"] < 2)]
+        tiles = tiles[(tiles["tile_x"] < 2) & (tiles["tile_y"] < 2)]  # noqa: PLR2004
     elif zoom == 0:
         tiles = tiles[(tiles["tile_x"] < 1) & (tiles["tile_y"] < 1)]
 
@@ -144,66 +134,51 @@ def _get_tile_xy(bbx: Tuple[float, float, float, float], zoom: int) -> pd.DataFr
 
 
 def _convert_bbox_crs(
-    bbx: Tuple[float, float, float, float],
+    bbx: tuple[float, float, float, float],
     crs_from: str,
     crs_to: str,
-) -> Tuple[float, float, float, float]:
-    """Convert a bounding box from WGS84 to Web Mercator (EPSG:3857).
+) -> tuple[float, float, float, float]:
+    """
+    Convert a bounding box from WGS84 to Web Mercator (EPSG:3857).
 
-    Parameters
-    ----------
-    bbx : tuple
-        A tuple representing the bounding box with coordinates in the CRS specified by crs_from.
-        The tuple is in the format (min_x, min_y, max_x, max_y).
-    crs_from : str
-        The CRS of the bounding box coordinates.
-    crs_to : str
-        The CRS to convert the bounding box coordinates to.
+    Args:
+        bbx (tuple): A tuple representing the bounding box with coordinates in the CRS specified by crs_from.
+            The tuple is in the format (min_x, min_y, max_x, max_y).
+        crs_from (str): The CRS of the bounding box coordinates.
+        crs_to (str): The CRS to convert the bounding box coordinates to.
 
-    Returns
-    -------
-    tuple
-        A tuple representing the bounding box with coordinates in the CRS specified by crs_to.
+    Returns:
+        tuple: A tuple representing the bounding box with coordinates in the CRS specified by crs_to.
         The tuple is in the format (min_x, min_y, max_x, max_y).
 
-    Examples
-    --------
+    Examples:
     >>> bbx = (-5.14, 41.33, 9.56, 51.09)
     >>> _convert_bbox_crs(bbx, "EPSG:4326", "EPSG:3857")
     (-572182.1826774261, 5061139.118730165, 1064214.3319836953, 6637229.1478071)
-    """
 
-    crs_from = CRS.from_epsg(int(crs_from.split(":")[1]))  # type: ignore
-    crs_to = CRS.from_epsg(int(crs_to.split(":")[1]))  # type: ignore
+    """
+    crs_from = CRS.from_epsg(int(crs_from.split(":")[1]))
+    crs_to = CRS.from_epsg(int(crs_to.split(":")[1]))
 
     transformer = Transformer.from_crs(crs_from, crs_to)
 
     min_x, min_y = transformer.transform(bbx[1], bbx[0])
     max_x, max_y = transformer.transform(bbx[3], bbx[2])
 
-    bbx = (min_x, min_y, max_x, max_y)
-
-    return bbx
+    return (min_x, min_y, max_x, max_y)
 
 
-def _estimate_files_size(bbx: Tuple[float, float, float, float], z: int) -> float:
+def _estimate_files_size(bbx: tuple[float, float, float, float], z: int) -> float:
     """
     Estimate the total file size based on the bounding box and zoom level.
 
-    Parameters
-    ----------
-    bbx : tuple
-        A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
-        xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and
-        maximum latitudes.
-    z : int
-        Zoom level, a integer between 0 and 14 where higher values correspond to more detailed tiles.
+    Args:
+        bbx (tuple): A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
+            xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and maximum latitudes.
+        z (int): Zoom level, a integer between 0 and 14 where higher values correspond to more detailed tiles.
 
-    Returns
-    -------
-    float
-        The estimated total file size in Go.
+    Returns:
+        float: The estimated total file size in Go.
+
     """
-    TILE_SIZE = 0.15  # Tile size in Mo
-
     return len(_get_tile_xy(bbx, z)) * TILE_SIZE / 1024

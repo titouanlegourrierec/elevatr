@@ -1,3 +1,4 @@
+# Copyright (c) 2025 Titouan Le Gourrierec
 """
 Global settings that can be configured by the user.
 

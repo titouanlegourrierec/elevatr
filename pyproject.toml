@@ -42,14 +42,46 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Visualization",
 ]
 
-[tool.setuptools]
-include-package-data = true
-
-[tool.setuptools.packages.find]
-where = ["."]
+[project.urls]
+Homepage = "https://github.com/titouanlegourrierec/elevatr"
+Documentation = "https://elevatr.readthedocs.io"
+"Bug Tracker" = "https://github.com/titouanlegourrierec/elevatr/issues"
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
     "pytest-xdist>=3.8.0",
+    "ruff>=0.14.10",
 ]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 119
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",   # Checks for the absence of trailing commas. (conflict with the formatter)
+    "D203",     # Checks for docstrings on class definitions that are not preceded by a blank line. (conflict with D211)
+    "D212",     # Checks for docstring summary lines that are not positioned on the first physical line of the docstring. (conflict with D213)
+]
+mccabe.max-complexity = 20
+pylint.max-args = 20
+pylint.max-locals = 30
+pylint.max-branches = 20
+pylint.max-statements = 60
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+
+[tool.ruff.format]
+quote-style = "double"              # Like Black, use double quotes for strings.
+indent-style = "space"              # Like Black, indent with spaces, rather than tabs.
+skip-magic-trailing-comma = false   # Like Black, respect magic trailing commas.
+line-ending = "auto"                # Like Black, automatically detect the appropriate line ending.
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
