@@ -1,13 +1,17 @@
-import os
+# Copyright (c) 2025 Titouan Le Gourrierec
+"""Unit tests for the elevatr package."""
+
 import shutil
 import tempfile
+from collections.abc import Iterator
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import matplotlib
+import matplotlib as mpl
 import numpy as np
 import pytest
 import rasterio
-import requests  # type: ignore
+import requests
 from rasterio.transform import from_origin
 
 from elevatr.downloader import _get_aws_terrain
@@ -16,13 +20,17 @@ from elevatr.raster import Raster
 from elevatr.raster_operations import _merge_rasters
 from elevatr.utils import _get_tile_xy, _lonlat_to_tilenum
 
-matplotlib.use("Agg")  # Use a non-interactive backend for testing
+
+mpl.use("Agg")  # Use a non-interactive backend for testing
+rng = np.random.default_rng(1234)
+
+NO_DATA_VALUE = -9999
 
 # Test cases for utils
 
 
 @pytest.mark.parametrize(
-    "lon_deg, lat_deg, zoom, expected",
+    ("lon_deg", "lat_deg", "zoom", "expected"),
     [
         (0, 0, 2, (2, 2)),  # Center of the map
         (-180, 0, 2, (0, 2)),  # Left edge
@@ -34,22 +42,24 @@ matplotlib.use("Agg")  # Use a non-interactive backend for testing
         (0, 0, 20, (524288, 524288)),  # High zoom level
     ],
 )
-def test_lonlat_to_tilenum(lon_deg, lat_deg, zoom, expected):
+def test_lonlat_to_tilenum(lon_deg: float, lat_deg: float, zoom: int, expected: tuple[int, int]) -> None:
     """Test the conversion of longitude/latitude coordinates to tile numbers."""
     result = _lonlat_to_tilenum(lon_deg, lat_deg, zoom)
-    assert (
-        result == expected
-    ), f"Failed for lon={lon_deg}, lat={lat_deg}, zoom={zoom}. Got: {result}, expected: {expected}"
+    assert result == expected, (
+        f"Failed for lon={lon_deg}, lat={lat_deg}, zoom={zoom}. Got: {result}, expected: {expected}"
+    )
 
 
 @pytest.mark.parametrize(
-    "bbx, zoom, max_tile_x, max_tile_y",
+    ("bbx", "zoom", "max_tile_x", "max_tile_y"),
     [
         ((-10, 10, -10, 10), 0, 0, 0),
         ((-10, 10, -10, 10), 1, 1, 1),
     ],
 )
-def test_get_tile_xy_zoom_levels(bbx, zoom, max_tile_x, max_tile_y):
+def test_get_tile_xy_zoom_levels(
+    bbx: tuple[float, float, float, float], zoom: int, max_tile_x: int, max_tile_y: int
+) -> None:
     """Test if the tiles are correctly filtered based on zoom level."""
     result = _get_tile_xy(bbx, zoom)
     assert (result["tile_x"] <= max_tile_x).all(), f"Tile x-coordinates exceed max for zoom {zoom}"
@@ -60,8 +70,14 @@ def test_get_tile_xy_zoom_levels(bbx, zoom, max_tile_x, max_tile_y):
 
 
 @pytest.fixture
-def create_test_rasters():
-    """Fixture to create temporary raster files for testing."""
+def create_test_rasters() -> Iterator[list[str]]:
+    """
+    Fixture to create temporary raster files for testing.
+
+    Yields:
+        Iterator[list[str]]: List of paths to the created raster files.
+
+    """
     rasters = []
     temp_dir = tempfile.TemporaryDirectory()
 
@@ -69,7 +85,7 @@ def create_test_rasters():
         data = np.ones((1, 2, 2), dtype=np.float32) * (i + 1)  # Create 2x2 raster data
         transform = from_origin(10 + i * 2, 10, 1, 1)
 
-        raster_path = os.path.join(temp_dir.name, f"test_raster_{i}.tif")
+        raster_path = Path(temp_dir.name) / f"test_raster_{i}.tif"
         with rasterio.open(
             raster_path,
             "w",
@@ -89,7 +105,7 @@ def create_test_rasters():
     temp_dir.cleanup()
 
 
-def test_merge_rasters(create_test_rasters):
+def test_merge_rasters(create_test_rasters: list[str]) -> None:
     """Test the merge_rasters function."""
     raster_list = create_test_rasters
     mosaic, meta = _merge_rasters(raster_list)
@@ -97,25 +113,37 @@ def test_merge_rasters(create_test_rasters):
     assert mosaic.shape == (1, 2, 4)  # Check mosaic shape
     assert meta["crs"].to_string() == "EPSG:3857"  # Check CRS
     assert mosaic[0, 0, 0] == 1  # Check the first pixel value
-    assert mosaic[0, 0, 2] == 2  # Check the transition between rasters
+    assert mosaic[0, 0, 2] == 2  # Check the transition between rasters  # noqa: PLR2004
 
 
 # Test cases for downloader
 
 
 @pytest.fixture
-def bbx():
-    """Bounding box coordinates for testing."""
+def bbx() -> tuple[float, float, float, float]:
+    """
+    Bounding box coordinates for testing.
+
+    Returns:
+        tuple[float, float, float, float]: Bounding box (min_lon, min_lat, max_lon, max_lat).
+
+    """
     return (-123.1, -122.9, 37.7, 37.8)
 
 
 @pytest.fixture
-def zoom():
-    """Zoom level for testing."""
+def zoom() -> int:
+    """
+    Zoom level for testing.
+
+    Returns:
+        int: Zoom level.
+
+    """
     return 0
 
 
-def test_get_aws_terrain(bbx, zoom, tmp_path):
+def test_get_aws_terrain(bbx: tuple[float, float, float, float], zoom: int, tmp_path: Path) -> None:
     """Test downloading AWS terrain data."""
     cache_folder = str(tmp_path)  # Use a temporary directory for storing tiles
 
@@ -125,34 +153,33 @@ def test_get_aws_terrain(bbx, zoom, tmp_path):
     # Assertions
     assert len(result) > 0  # Ensure files were downloaded
     for filepath in result:
-        assert os.path.exists(filepath)  # Ensure files exist
+        assert Path(filepath).exists()  # Ensure files exist
         assert filepath.endswith(".tif")  # Ensure they are .tif files
 
 
-def test_get_aws_terrain_with_cache(bbx, zoom, tmp_path):
+def test_get_aws_terrain_with_cache(bbx: tuple[float, float, float, float], zoom: int, tmp_path: Path) -> None:
     """Test downloading AWS terrain data with cache."""
-    cache_folder = str(tmp_path)  # Use a temporary directory
+    cache_folder = tmp_path  # Use a temporary directory
 
     # Simulate a cached file
-    existing_tile_filename = os.path.join(cache_folder, "geotiff_0_0_0.tif")
-    os.makedirs(os.path.dirname(existing_tile_filename), exist_ok=True)
-    with open(existing_tile_filename, "wb") as f:
-        f.write(b"cached_tile_data")
+    existing_tile_filename = cache_folder / "geotiff_0_0_0.tif"
+    existing_tile_filename.parent.mkdir(exist_ok=True, parents=True)
+    existing_tile_filename.write_bytes(b"cached_tile_data")
 
     # Call the function
     result = _get_aws_terrain(bbx, zoom, cache_folder, use_cache=True, verbose=True)
 
     # Assertions
     assert len(result) > 0  # Ensure files are returned
-    assert existing_tile_filename in result  # Ensure the cached file is included
+    assert str(existing_tile_filename) in result  # Ensure the cached file is included
 
     # Ensure new files are downloaded (if applicable)
     for filepath in result:
-        assert os.path.exists(filepath)
+        assert Path(filepath).exists()
         assert filepath.endswith(".tif")
 
 
-def test_get_aws_terrain_invalid_file_type(bbx, zoom, tmp_path):
+def test_get_aws_terrain_invalid_file_type(bbx: tuple[float, float, float, float], zoom: int, tmp_path: Path) -> None:
     """Test handling of invalid file types in AWS terrain data download."""
     cache_folder = str(tmp_path)
 
@@ -170,7 +197,7 @@ def test_get_aws_terrain_invalid_file_type(bbx, zoom, tmp_path):
             _get_aws_terrain(bbx, zoom, cache_folder, use_cache=False, verbose=False)
 
 
-def test_get_aws_terrain_request_exception(bbx, zoom, tmp_path):
+def test_get_aws_terrain_request_exception(bbx: tuple[float, float, float, float], zoom: int, tmp_path: Path) -> None:
     """Test handling of network exceptions in AWS terrain data download."""
     cache_folder = str(tmp_path)
 
@@ -187,28 +214,52 @@ def test_get_aws_terrain_request_exception(bbx, zoom, tmp_path):
 
 
 @pytest.fixture
-def mock_bbox():
-    """Fixture to provide a valid mock bounding box."""
+def mock_bbox() -> tuple[float, float, float, float]:
+    """
+    Fixture to provide a valid mock bounding box.
+
+    Returns:
+        tuple[float, float, float, float]: A valid bounding box.
+
+    """
     return (-122.5, 37.5, -122.0, 38.0)
 
 
 @pytest.fixture
-def mock_zoom():
-    """Fixture to provide a valid zoom level."""
+def mock_zoom() -> int:
+    """
+    Fixture to provide a valid zoom level.
+
+    Returns:
+        int: A valid zoom level.
+
+    """
     return 8
 
 
 @pytest.fixture
-def mock_cache_folder(tmp_path):
-    """Fixture to create a temporary cache folder."""
+def mock_cache_folder(tmp_path: Path) -> str:
+    """
+    Fixture to create a temporary cache folder.
+
+    Args:
+        tmp_path (Path): Temporary path provided by pytest.
+
+    Returns:
+        str: Path to the temporary cache folder.
+
+    """
     return str(tmp_path / "cache")
 
 
-def test_get_elev_raster_valid_inputs(mock_bbox, mock_zoom, mock_cache_folder):
+def test_get_elev_raster_valid_inputs(
+    mock_bbox: tuple[float, float, float, float], mock_zoom: int, mock_cache_folder: str
+) -> None:
     """Test get_elev_raster with valid inputs."""
-    with patch("elevatr.downloader._get_aws_terrain") as mock_get_aws_terrain, patch(
-        "elevatr.raster_operations._merge_rasters"
-    ) as mock_merge_rasters:
+    with (
+        patch("elevatr.downloader._get_aws_terrain") as mock_get_aws_terrain,
+        patch("elevatr.raster_operations._merge_rasters") as mock_merge_rasters,
+    ):
         mock_get_aws_terrain.return_value = ["tile1.tif", "tile2.tif"]
         mock_merge_rasters.return_value = (np.zeros((1, 2, 2)), {"crs": "EPSG:3857"})
 
@@ -230,11 +281,15 @@ def test_get_elev_raster_valid_inputs(mock_bbox, mock_zoom, mock_cache_folder):
         assert "crs" in meta, "Metadata should contain CRS."
 
 
-def test_get_elev_raster_delete_cache(mock_bbox, mock_zoom, mock_cache_folder):
+def test_get_elev_raster_delete_cache(
+    mock_bbox: tuple[float, float, float, float], mock_zoom: int, mock_cache_folder: str
+) -> None:
     """Test get_elev_raster with cache deletion."""
-    with patch("shutil.rmtree") as mock_rmtree, patch(
-        "elevatr.downloader._get_aws_terrain"
-    ) as mock_get_aws_terrain, patch("elevatr.raster_operations._merge_rasters") as mock_merge_rasters:
+    with (
+        patch("shutil.rmtree") as mock_rmtree,
+        patch("elevatr.downloader._get_aws_terrain") as mock_get_aws_terrain,
+        patch("elevatr.raster_operations._merge_rasters") as mock_merge_rasters,
+    ):
         mock_get_aws_terrain.return_value = []
         mock_merge_rasters.return_value = (np.zeros((1, 2, 2)), {"crs": "EPSG:3857"})
 
@@ -250,7 +305,7 @@ def test_get_elev_raster_delete_cache(mock_bbox, mock_zoom, mock_cache_folder):
         mock_rmtree.assert_called_once_with(mock_cache_folder)
 
 
-def test_get_elev_raster_invalid_locations(mock_zoom):
+def test_get_elev_raster_invalid_locations(mock_zoom: int) -> None:
     """Test get_elev_raster with invalid locations."""
     invalid_locations = "invalid"
 
@@ -265,7 +320,7 @@ def test_get_elev_raster_invalid_locations(mock_zoom):
         )
 
 
-def test_get_elev_raster_invalid_zoom(mock_bbox):
+def test_get_elev_raster_invalid_zoom(mock_bbox: tuple[float, float, float, float]) -> None:
     """Test get_elev_raster with invalid zoom level."""
     invalid_zoom = 20  # Out of valid range
 
@@ -280,7 +335,7 @@ def test_get_elev_raster_invalid_zoom(mock_bbox):
         )
 
 
-def test_get_elev_raster_invalid_crs(mock_bbox, mock_zoom):
+def test_get_elev_raster_invalid_crs(mock_bbox: tuple[float, float, float, float], mock_zoom: int) -> None:
     """Test get_elev_raster with invalid CRS."""
     invalid_crs = "invalid_crs"
 
@@ -296,13 +351,14 @@ def test_get_elev_raster_invalid_crs(mock_bbox, mock_zoom):
         )
 
 
-def test_get_elev_raster_no_cache_folder(mock_bbox, mock_zoom):
+def test_get_elev_raster_no_cache_folder(mock_bbox: tuple[float, float, float, float], mock_zoom: int) -> None:
     """Test get_elev_raster when the cache folder does not exist."""
     cache_folder = "./non_existing_cache"
 
-    with patch("elevatr.downloader._get_aws_terrain") as mock_get_aws_terrain, patch(
-        "elevatr.raster_operations._merge_rasters"
-    ) as mock_merge_rasters:
+    with (
+        patch("elevatr.downloader._get_aws_terrain") as mock_get_aws_terrain,
+        patch("elevatr.raster_operations._merge_rasters") as mock_merge_rasters,
+    ):
         mock_get_aws_terrain.return_value = ["tile1.tif", "tile2.tif"]
         mock_merge_rasters.return_value = (np.zeros((1, 2, 2)), {"crs": "EPSG:3857"})
 
@@ -315,7 +371,7 @@ def test_get_elev_raster_no_cache_folder(mock_bbox, mock_zoom):
             verbose=True,
         )
 
-        assert os.path.exists(cache_folder), "Cache folder should be created."
+        assert Path(cache_folder).exists(), "Cache folder should be created."
 
         shutil.rmtree(cache_folder)
 
@@ -323,9 +379,9 @@ def test_get_elev_raster_no_cache_folder(mock_bbox, mock_zoom):
 # Test cases for raster
 
 
-def test_raster_post_init():
+def test_raster_post_init() -> None:
     """Test the initialization of the Raster class."""
-    data = np.random.rand(1, 2, 2)
+    data = rng.random((1, 2, 2))
     meta = {
         "crs": "EPSG:4326",
         "height": 2,
@@ -337,16 +393,16 @@ def test_raster_post_init():
     raster = Raster(data=data, meta=meta)
 
     assert raster.crs == "EPSG:4326"
-    assert raster.height == 2
-    assert raster.width == 2
+    assert raster.height == 2  # noqa: PLR2004
+    assert raster.width == 2  # noqa: PLR2004
     assert raster.dtype == "float32"
-    assert raster.nodata == -9999
+    assert raster.nodata == NO_DATA_VALUE
     assert raster.transform == meta["transform"]
 
 
-def test_raster_show():
+def test_raster_show() -> None:
     """Test the show method of the Raster class."""
-    data = np.random.rand(1, 2, 2)
+    data = rng.random((1, 2, 2))
     meta = {
         "transform": rasterio.transform.from_origin(0, 0, 1, 1),
         "height": 2,
@@ -359,9 +415,9 @@ def test_raster_show():
         mock_show.assert_called_once()
 
 
-def test_raster_show_clip_zero():
+def test_raster_show_clip_zero() -> None:
     """Test the show method with clip_zero=True."""
-    data = np.random.randn(1, 2, 2)  # Random data including negative values
+    data = rng.standard_normal((1, 2, 2))  # Random data including negative values
     meta = {
         "transform": rasterio.transform.from_origin(0, 0, 1, 1),
         "height": 2,
@@ -376,9 +432,9 @@ def test_raster_show_clip_zero():
         mock_show.assert_called_once()
 
 
-def test_raster_to_numpy():
+def test_raster_to_numpy() -> None:
     """Test the to_numpy method of the Raster class."""
-    data = np.random.rand(1, 2, 2)
+    data = rng.random((1, 2, 2))
     meta = {
         "transform": rasterio.transform.from_origin(0, 0, 1, 1),
         "height": 2,
@@ -391,9 +447,9 @@ def test_raster_to_numpy():
     assert np.array_equal(np_array, data[0])
 
 
-def test_raster_to_tif():
+def test_raster_to_tif() -> None:
     """Test the to_tif method of the Raster class."""
-    data = np.random.rand(1, 2, 2).astype(np.float32)
+    data = rng.random((1, 2, 2), dtype=np.float32)
     meta = {
         "driver": "GTiff",
         "height": 2,
@@ -408,9 +464,9 @@ def test_raster_to_tif():
     with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as temp_tif:
         temp_tif.close()
         raster.to_tif(temp_tif.name)
-        assert os.path.exists(temp_tif.name)
+        assert Path(temp_tif.name).exists()
 
-        assert os.path.exists(temp_tif.name)
+        assert Path(temp_tif.name).exists()
 
         with rasterio.open(temp_tif.name) as src:
             read_data = src.read(1)
@@ -418,12 +474,12 @@ def test_raster_to_tif():
             assert src.crs.to_string() == "EPSG:4326"
             assert src.meta["dtype"] == "float32"
 
-    os.remove(temp_tif.name)
+    Path(temp_tif.name).unlink()
 
 
-def test_raster_to_tif_invalid_compression():
+def test_raster_to_tif_invalid_compression() -> None:
     """Test the to_tif method of the Raster class with an invalid compression format."""
-    data = np.random.rand(1, 2, 2).astype(np.float32)
+    data = rng.random((1, 2, 2), dtype=np.float32)
     meta = {
         "driver": "GTiff",
         "height": 2,
@@ -439,15 +495,21 @@ def test_raster_to_tif_invalid_compression():
         temp_tif.close()
         with pytest.raises(
             ValueError,
-            match="Invalid compression type: invalid_compression. Valid options are",
+            match=r"Invalid compression type: invalid_compression. Valid options are",
         ):
             raster.to_tif(temp_tif.name, compress="invalid_compression")
 
 
 @pytest.fixture
-def mock_raster_data():
-    """Fixture to provide mock raster data and metadata."""
-    data = np.random.rand(1, 2, 2).astype(np.float32)
+def mock_raster_data() -> tuple[np.ndarray, dict]:
+    """
+    Fixture to provide mock raster data and metadata.
+
+    Returns:
+        tuple[np.ndarray, dict]: A tuple containing raster data and metadata.
+
+    """
+    data = rng.random((1, 2, 2), dtype=np.float32)
     meta = {
         "driver": "GTiff",
         "height": 2,
@@ -460,7 +522,7 @@ def mock_raster_data():
     return data, meta
 
 
-def test_raster_save_and_load(mock_raster_data):
+def test_raster_save_and_load(mock_raster_data: tuple[np.ndarray, dict]) -> None:
     """Test saving and loading raster data to and from a GeoTIFF file."""
     data, meta = mock_raster_data
     raster = Raster(data=data, meta=meta)
@@ -474,10 +536,10 @@ def test_raster_save_and_load(mock_raster_data):
             assert np.array_equal(loaded_data, raster.to_numpy())
             assert src.meta["crs"] == raster.meta["crs"]
 
-    os.remove(temp_tif.name)
+    Path(temp_tif.name).unlink()
 
 
-def test_raster_to_obj(mock_raster_data):
+def test_raster_to_obj(mock_raster_data: tuple[np.ndarray, dict]) -> None:
     """Test the to_obj method of the Raster class."""
     data, meta = mock_raster_data
     raster = Raster(data=data, meta=meta)
@@ -486,29 +548,28 @@ def test_raster_to_obj(mock_raster_data):
         temp_obj.close()
         raster.to_obj(temp_obj.name, clip_zero=True, zscale=2.0, solid=True)
 
-        with open(temp_obj.name, "r") as f:
-            obj_content = f.read()
-            assert "v 0 1" in obj_content  # Check vertices
-            assert "v 1 0" in obj_content
-            assert "f 1 3 4 2" in obj_content  # Check faces
+        obj_content = Path(temp_obj.name).read_text(encoding="utf-8")
+        assert "v 0 1" in obj_content  # Check vertices
+        assert "v 1 0" in obj_content
+        assert "f 1 3 4 2" in obj_content  # Check faces
 
-    os.remove(temp_obj.name)
+    Path(temp_obj.name).unlink()
 
 
-def test_raster_to_obj_with_texture(mock_raster_data):
+def test_raster_to_obj_with_texture(mock_raster_data: tuple[np.ndarray, dict]) -> None:
     """Test the to_obj method of the Raster class with texture."""
     data, meta = mock_raster_data
     raster = Raster(data=data, meta=meta)
 
-    with tempfile.NamedTemporaryFile(suffix=".obj", delete=False) as temp_obj, tempfile.NamedTemporaryFile(
-        suffix=".png", delete=False
-    ) as temp_texture:
+    with (
+        tempfile.NamedTemporaryFile(suffix=".obj", delete=False) as temp_obj,
+        tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_texture,
+    ):
         temp_obj.close()
         temp_texture.close()
 
         # Create a dummy texture file
-        with open(temp_texture.name, "wb") as f:
-            f.write(b"\x89PNG\r\n\x1a\n")
+        Path(temp_texture.name).write_bytes(b"\x89PNG\r\n\x1a\n")
 
         raster.to_obj(
             temp_obj.name,
@@ -518,45 +579,43 @@ def test_raster_to_obj_with_texture(mock_raster_data):
             texture_path=temp_texture.name,
         )
 
-        with open(temp_obj.name, "r") as f:
-            obj_content = f.read()
-            assert "v 0 1" in obj_content  # Check vertices
-            assert "v 1 0" in obj_content
-            assert "f 1/1 3/3 4/4 2/2" in obj_content  # Check faces with texture coordinates
-            assert "mtllib" in obj_content  # Check material library
+        obj_content = Path(temp_obj.name).read_text(encoding="utf-8")
+        assert "v 0 1" in obj_content  # Check vertices
+        assert "v 1 0" in obj_content
+        assert "f 1/1 3/3 4/4 2/2" in obj_content  # Check faces with texture coordinates
+        assert "mtllib" in obj_content  # Check material library
 
-        with open(temp_obj.name.replace(".obj", ".mtl"), "r") as f:
-            mtl_content = f.read()
-            assert "newmtl material_0" in mtl_content
-            assert f"map_Kd {temp_texture.name}" in mtl_content
+        mtl_content = Path(temp_obj.name.replace(".obj", ".mtl")).read_text(encoding="utf-8")
+        assert "newmtl material_0" in mtl_content
+        assert f"map_Kd {temp_texture.name}" in mtl_content
 
-    os.remove(temp_obj.name)
-    os.remove(temp_texture.name)
-    os.remove(temp_obj.name.replace(".obj", ".mtl"))
+    Path(temp_obj.name).unlink()
+    Path(temp_texture.name).unlink()
+    Path(temp_obj.name.replace(".obj", ".mtl")).unlink()
 
 
-def test_download_basemap(mock_raster_data, tmp_path):
+def test_download_basemap(mock_raster_data: tuple[np.ndarray, dict], tmp_path: Path) -> None:
     """Test the _download_basemap method of the Raster class."""
     data, meta = mock_raster_data
     raster = Raster(data=data, meta=meta)
     raster.bounds = (-122.5, 37.5, -122.0, 38.0)
     file_path = tmp_path / "basemap.png"
 
-    raster._download_basemap(file_path=str(file_path), zoom="auto")
+    raster._download_basemap(file_path=str(file_path), zoom="auto")  # noqa: SLF001
 
     assert file_path.exists(), "Basemap image should be saved."
 
-    os.remove(file_path)
+    Path(file_path).unlink()
 
 
-def test_quit(mock_raster_data):
+def test_quit(mock_raster_data: tuple[np.ndarray, dict]) -> None:
     """Test the quit method of the Raster class."""
     # Create a temporary directory to act as the cache folder
     temp_dir = tempfile.mkdtemp()
 
     try:
         # Ensure the directory exists
-        assert os.path.exists(temp_dir), "Temporary directory should exist."
+        assert Path(temp_dir).exists(), "Temporary directory should exist."
 
         # Create a Raster object (assuming the quit method is part of this class)
         data, meta = mock_raster_data
@@ -566,8 +625,8 @@ def test_quit(mock_raster_data):
         raster.quit(cache_folder=temp_dir)
 
         # Verify the directory has been deleted
-        assert not os.path.exists(temp_dir), "Temporary directory should be deleted."
+        assert not Path(temp_dir).exists(), "Temporary directory should be deleted."
     finally:  # pragma: no cover
         # Ensure the temporary directory is deleted
-        if os.path.exists(temp_dir):
+        if Path(temp_dir).exists():
             shutil.rmtree(temp_dir)
