@@ -1,27 +1,27 @@
-# Configuration file for the Sphinx documentation builder.
+"""Configuration file for the Sphinx documentation builder."""  # noqa: INP001
 
-import os
+import re
 import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.abspath("../../"))
+
+sys.path.insert(0, str(Path("../../").resolve()))
 
 # -- Project information -----------------------------------------------------
 
 author = "Titouan Le Gourrierec"
-copyright = "2025, Titouan Le Gourrierec"
+copyright = "2025, Titouan Le Gourrierec"  # noqa: A001
 project = "elevatr"
 
 
-def get_version():
-    """Get the version number."""
-    with open("../../elevatr/_version.py") as f:
-        for line in f:
-            if line.startswith("__version__"):
-                return line.split("=")[-1].strip().strip("'").strip('"')
+pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+with pyproject_path.open() as f:
+    content = f.read()
+match = re.search(r'^version\s*=\s*["\']([^"\']+)["\']', content, re.MULTILINE)
 
 
 # The full version, including alpha/beta/rc tags
-version = release = get_version()
+version = release = match.group(1) if match else "unknown"
 
 
 # -- General configuration ---------------------------------------------------
