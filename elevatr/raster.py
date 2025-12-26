@@ -3,7 +3,6 @@
 
 import hashlib
 import logging
-import pathlib
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -11,6 +10,7 @@ from typing import Any
 
 import contextily as ctx
 import geopandas as gpd
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pyvista as pv
@@ -55,16 +55,21 @@ class Raster:
         self.dtype = self.meta.get("dtype", None)
         self.nodata = self.meta.get("nodata", None)
         self.transform = self.meta.get("transform", None)
-        self.bounds = (
-            float(self.transform[2]),
-            float(self.transform[5] + self.height * self.transform[4]),
-            float(self.transform[2] + self.width * self.transform[0]),
-            float(self.transform[5]),
-        )
+        if self.transform is not None and self.height is not None and self.width is not None:
+            self.bounds = (
+                float(self.transform[2]),
+                float(self.transform[5] + self.height * self.transform[4]),
+                float(self.transform[2] + self.width * self.transform[0]),
+                float(self.transform[5]),
+            )
+        else:
+            self.bounds = None
         self.resolution = self._resolution()
         self.imagery_sources = self.meta.get("imagery_sources", None)
 
     def _resolution(self) -> dict[str, Any]:
+        if self.transform is None:
+            return {"x": None, "y": None, "unit": "unknown"}
         resolution = (abs(self.transform[0]), abs(self.transform[4]))
 
         if self.crs:
@@ -77,14 +82,14 @@ class Raster:
 
     def show(
         self,
-        cmap: str | None = "viridis",
+        cmap: str | mcolors.Colormap | None = "viridis",
         figsize: tuple | None = (10, 10),
         *,
         clip_zero: bool | None = False,
         clip_color: str | None = "white",
         show_extras: bool | None = True,
         file_path: str | None = None,
-        **kwargs: dict[str, Any],
+        **kwargs,  # noqa: ANN003
     ) -> None:
         """
         Display the raster data as an image.
@@ -103,7 +108,8 @@ class Raster:
 
         cmap = plt.get_cmap(cmap) if isinstance(cmap, str) else cmap
         if cmap is not None:
-            cmap.set_bad(color=clip_color)
+            color = clip_color if clip_color is not None else "white"
+            cmap.set_bad(color=color)
 
         extent = plotting_extent(self.data, self.transform)
         fig, ax = plt.subplots(figsize=figsize)
@@ -177,22 +183,25 @@ class Raster:
             self.crs = self.meta["crs"]
             self.transform = self.meta["transform"]
             self.height, self.width = self.meta["height"], self.meta["width"]
-            self.bounds = (
-                float(self.transform[2]),
-                float(self.transform[5] + self.height * self.transform[4]),
-                float(self.transform[2] + self.width * self.transform[0]),
-                float(self.transform[5]),
-            )
+            if self.transform is not None and self.height is not None and self.width is not None:
+                self.bounds = (
+                    float(self.transform[2]),
+                    float(self.transform[5] + self.height * self.transform[4]),
+                    float(self.transform[2] + self.width * self.transform[0]),
+                    float(self.transform[5]),
+                )
+            else:
+                self.bounds = None
             self.resolution = self._resolution()
 
     def to_obj(
         self,
-        output_path: str,
+        output_path: str | Path,
         *,
         clip_zero: bool = False,
         zscale: float = 1.0,
         solid: bool = False,
-        texture_path: str | None = None,
+        texture_path: str | Path | None = None,
     ) -> None:
         """
         Write the raster data to an OBJ file.
@@ -203,7 +212,7 @@ class Raster:
             zscale (float, optional): The scaling factor to apply to the z-axis. Decrease to attenuate elevation and
                 increase to accentuate it, by default 1.0.
             solid (bool, optional): Whether to add a base below the surface to create a solid object, by default False.
-            texture_path (str, optional): The path to the texture image file, by default None.
+            texture_path (str | Path | None, optional): The path to the texture image file, by default None.
 
         Raises:
             ValueError: If the resolution is not defined.
@@ -221,7 +230,7 @@ class Raster:
         height, width = data.shape
         min_z = np.nanmin(data) * zscale if solid else 0  # Minimum z-value
 
-        with pathlib.Path(output_path).open("w", encoding="utf-8") as f:
+        with Path(output_path).open("w", encoding="utf-8") as f:
             # Write vertices
             for y in range(height):
                 for x in range(width):
@@ -286,16 +295,16 @@ class Raster:
 
         # Write the material file if texture_path is provided
         if texture_path:
-            mtl_path = output_path.replace(".obj", ".mtl")
-            with pathlib.Path(mtl_path).open("w", encoding="utf-8") as mtl_file:
+            mtl_path = str(output_path).replace(".obj", ".mtl")
+            with Path(mtl_path).open("w", encoding="utf-8") as mtl_file:
                 mtl_file.write("newmtl material_0\n")
                 mtl_file.write(f"map_Kd {texture_path}\n")
-            with pathlib.Path(output_path).open("a", encoding="utf-8") as f:
+            with Path(output_path).open("a", encoding="utf-8") as f:
                 f.write(f"mtllib {mtl_path}\n")
 
     def _download_basemap(
         self,
-        file_path: str,
+        file_path: str | Path,
         zoom: str | int = "auto",
     ) -> None:
         """
@@ -303,7 +312,7 @@ class Raster:
 
         Parameters
         ----------
-        file_path : str
+        file_path : str | Path
             The path to save the basemap image to.
         zoom : Union[str, int], optional
             The zoom level of the basemap image, by default 'auto'. Big zoom levels will result in
@@ -321,7 +330,7 @@ class Raster:
         ax.set_ylim(bounds["miny"][0], bounds["maxy"][0])
         ax.axis("off")
 
-        ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery, attribution=False, zoom=zoom)
+        ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery, attribution=False, zoom=zoom)  # ty: ignore[unresolved-attribute]
 
         plt.savefig(file_path, bbox_inches="tight", pad_inches=0, dpi=300)
         plt.close(fig)
@@ -340,7 +349,7 @@ class Raster:
         zoom: float = 1,
         light_intensity: float = 0.5,
         file_path: str | None = None,
-        cache_folder: str | None = None,
+        cache_folder: str | Path | None = None,
         show: bool = True,
         verbose: bool = True,
     ) -> None:  # pragma: no cover
@@ -436,7 +445,7 @@ class Raster:
         ).hexdigest()
         render_path = cache_folder / f"render_{render_hash}.png"
 
-        if not pathlib.Path(render_path).exists():
+        if not Path(render_path).exists():
             if verbose:
                 logger.info("Rendering 3D model...")
 
@@ -476,7 +485,7 @@ class Raster:
             plt.show()
 
     @staticmethod
-    def quit(*, cache_folder: str | None = None) -> None:
+    def quit(*, cache_folder: str | Path | None = None) -> None:
         """Delete the cache directory."""
         cache_folder = cache_folder or settings.cache_folder
         cache_folder = Path(cache_folder).resolve()

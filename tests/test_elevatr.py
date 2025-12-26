@@ -273,8 +273,9 @@ def test_get_elev_raster_valid_inputs(
             verbose=False,
         )
 
-        data = raster.data
-        meta = raster.meta
+        if isinstance(raster, Raster):
+            data = raster.data
+            meta = raster.meta
 
         assert isinstance(data, np.ndarray), "Raster should be a numpy array."
         assert isinstance(meta, dict), "Metadata should be a dictionary."
@@ -311,7 +312,7 @@ def test_get_elev_raster_invalid_locations(mock_zoom: int) -> None:
 
     with pytest.raises(AssertionError, match="locations must be a tuple of length 4"):
         get_elev_raster(
-            locations=invalid_locations,
+            locations=invalid_locations,  # ty: ignore[invalid-argument-type]
             zoom=mock_zoom,
             cache_folder="./cache",
             use_cache=True,

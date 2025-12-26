@@ -23,7 +23,7 @@ CHUNCK_SIZE = 8192
 def _get_aws_terrain(
     bbx: tuple[float, float, float, float],
     zoom: int,
-    cache_folder: str,
+    cache_folder: str | Path,
     *,
     use_cache: bool,
     verbose: bool,
@@ -35,7 +35,7 @@ def _get_aws_terrain(
         bbx (tuple): A tuple representing the bounding box with coordinates (xmin, ymin, xmax, ymax).
             xmin and xmax are the minimum and maximum longitudes, ymin and ymax are the minimum and maximum latitudes.
         zoom (int): Zoom level, a integer between 0 and 14 where higher values correspond to more detailed tiles.
-        cache_folder (str): Path to the folder where tiles will be cached.
+        cache_folder (str | Path): Path to the folder where tiles will be cached.
         use_cache (bool): If True, use cached tiles if they exist.
         verbose (bool): If True, display progress information.
 

@@ -122,7 +122,7 @@ def _get_tile_xy(bbx: tuple[float, float, float, float], zoom: int) -> pd.DataFr
     y_tiles = np.arange(ymin, ymax + 1)
     tiles = pd.DataFrame(
         np.array(np.meshgrid(x_tiles, y_tiles)).T.reshape(-1, 2),
-        columns=["tile_x", "tile_y"],
+        columns=pd.Index(["tile_x", "tile_y"]),
     )
 
     if zoom == 1:
@@ -157,10 +157,10 @@ def _convert_bbox_crs(
     (-572182.1826774261, 5061139.118730165, 1064214.3319836953, 6637229.1478071)
 
     """
-    crs_from = CRS.from_epsg(int(crs_from.split(":")[1]))
-    crs_to = CRS.from_epsg(int(crs_to.split(":")[1]))
+    crs_from_obj = CRS.from_epsg(int(crs_from.split(":")[1]))
+    crs_to_obj = CRS.from_epsg(int(crs_to.split(":")[1]))
 
-    transformer = Transformer.from_crs(crs_from, crs_to)
+    transformer = Transformer.from_crs(crs_from_obj, crs_to_obj)
 
     min_x, min_y = transformer.transform(bbx[1], bbx[0])
     max_x, max_y = transformer.transform(bbx[3], bbx[2])

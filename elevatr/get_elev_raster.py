@@ -133,7 +133,7 @@ def get_elev_raster(
     raster = Raster(mosaic, meta)
 
     # Reproject the raster if needed
-    if crs != "EPSG:3857":
+    if crs is not None and crs != "EPSG:3857":
         raster.reproject(crs)
 
     return raster
