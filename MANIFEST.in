@@ -6,3 +6,4 @@ include setup.py
 recursive-include elevatr *.py
 exclude elevatr.egg-info/*
 exclude tests/*
+exclude draft/*
