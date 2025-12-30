@@ -1,9 +1,0 @@
--r requirements.txt
-black
-codecov
-coverage
-flake8
-mypy
-pre-commit
-pytest
-pytest-xdist
