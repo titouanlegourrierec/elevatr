@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "elevatr"
-version = "0.3.1a2"
+version = "0.3.1a3"
 description = "A Python package to simplify downloading and processing elevation data."
 authors = [
     { name = "Titouan Le Gourrierec", email = "titouanlegourrierec@icloud.com" }
