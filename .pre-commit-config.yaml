@@ -13,12 +13,9 @@ repos:
       - id: requirements-txt-fixer
       - id: trailing-whitespace
 
-  - repo: local
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.10
     hooks:
-    - id: pytest
-      name: pytest
-      entry: .venv/bin/python -m pytest -n auto tests
-      language: python
-      types: [python]
-      pass_filenames: false
-      always_run: true
+      - id: ruff-check
+        args: [ --fix ]
+      - id: ruff-format
