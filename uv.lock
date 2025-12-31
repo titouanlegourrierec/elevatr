@@ -648,7 +648,7 @@ wheels = [
 
 [[package]]
 name = "elevatr"
-version = "0.3.1a3"
+version = "0.3.1a4"
 source = { editable = "." }
 dependencies = [
     { name = "contextily" },
