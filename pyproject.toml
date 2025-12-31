@@ -56,6 +56,11 @@ dev = [
     "twine>=6.2.0",
     "ty>=0.0.7",
 ]
+docs = [
+    "furo>=2025.12.19",
+    "sphinx>=8.1.3",
+    "sphinx-autodoc-typehints>=3.0.1",
+]
 
 [tool.ruff]
 target-version = "py310"
