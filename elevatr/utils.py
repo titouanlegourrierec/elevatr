@@ -4,7 +4,6 @@
 import math
 
 import numpy as np
-import pandas as pd
 from pyproj import CRS, Transformer
 
 
@@ -58,7 +57,7 @@ def _lonlat_to_tilenum(lon_deg: float, lat_deg: float, zoom: int) -> tuple[int, 
     return xtile, ytile
 
 
-def _get_tile_xy(bbx: tuple[float, float, float, float], zoom: int) -> pd.DataFrame:
+def _get_tile_xy(bbx: tuple[float, float, float, float], zoom: int) -> list[tuple[int, int]]:
     """
     Generate a DataFrame of tile coordinates within a bounding box at a specific zoom level.
 
@@ -68,12 +67,9 @@ def _get_tile_xy(bbx: tuple[float, float, float, float], zoom: int) -> pd.DataFr
         zoom (int): Zoom level, a non-negative integer where higher values correspond to more detailed tiles.
 
     Returns:
-        pd.DataFrame: A DataFrame containing the tile coordinates within the bounding box at the specified zoom level.
-            The DataFrame has two columns:
-            - 'tile_x' : int
-                The tile number along the x-axis (longitude).
-            - 'tile_y' : int
-                The tile number along the y-axis (latitude).
+        list[tuple[int, int]]:
+            A list of (tile_x, tile_y) tuples containing the tile coordinates within the bounding box at the specified
+            zoom level.
 
     Notes:
         - The function normalizes the bounding box coordinates to ensure they are within valid ranges.
@@ -120,15 +116,12 @@ def _get_tile_xy(bbx: tuple[float, float, float, float], zoom: int) -> pd.DataFr
     # Generate tile coordinates
     x_tiles = np.arange(xmin, xmax + 1)
     y_tiles = np.arange(ymin, ymax + 1)
-    tiles = pd.DataFrame(
-        np.array(np.meshgrid(x_tiles, y_tiles)).T.reshape(-1, 2),
-        columns=pd.Index(["tile_x", "tile_y"]),
-    )
+    tiles = [(int(x), int(y)) for x in x_tiles for y in y_tiles]
 
     if zoom == 1:
-        tiles = tiles[(tiles["tile_x"] < 2) & (tiles["tile_y"] < 2)]  # noqa: PLR2004
+        tiles = [t for t in tiles if t[0] < 2 and t[1] < 2]  # noqa: PLR2004
     elif zoom == 0:
-        tiles = tiles[(tiles["tile_x"] < 1) & (tiles["tile_y"] < 1)]
+        tiles = [t for t in tiles if t[0] < 1 and t[1] < 1]
 
     return tiles
 

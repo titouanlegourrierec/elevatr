@@ -62,8 +62,10 @@ def test_get_tile_xy_zoom_levels(
 ) -> None:
     """Test if the tiles are correctly filtered based on zoom level."""
     result = _get_tile_xy(bbx, zoom)
-    assert (result["tile_x"] <= max_tile_x).all(), f"Tile x-coordinates exceed max for zoom {zoom}"
-    assert (result["tile_y"] <= max_tile_y).all(), f"Tile y-coordinates exceed max for zoom {zoom}"
+    tile_xs = [t[0] for t in result]
+    tile_ys = [t[1] for t in result]
+    assert all(x <= max_tile_x for x in tile_xs), f"Tile x-coordinates exceed max for zoom {zoom}"
+    assert all(y <= max_tile_y for y in tile_ys), f"Tile y-coordinates exceed max for zoom {zoom}"
 
 
 # Test cases for raster_operations

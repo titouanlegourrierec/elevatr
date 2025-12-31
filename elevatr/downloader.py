@@ -123,8 +123,8 @@ def _get_aws_terrain(
         return cached, uncached
 
     # Define the base URL and assemble tile URLs
-    tiles_df = _get_tile_xy(bbx, zoom)
-    urls = [f"{BASE_URL}/{zoom}/{tile.tile_x}/{tile.tile_y}.tif" for tile in tiles_df.to_records(index=False)]
+    tiles = _get_tile_xy(bbx, zoom)
+    urls = [f"{BASE_URL}/{zoom}/{tile[0]}/{tile[1]}.tif" for tile in tiles]
 
     # Separate cached and uncached tiles
     cached_files, uncached_urls = _filter_cached_and_uncached(urls)
