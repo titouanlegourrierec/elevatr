@@ -162,8 +162,18 @@ class Raster:
             raise ValueError(msg)
 
         self.meta.update(compress=compress)
+        # Extract imagery_sources before opening the file, as it's not a valid GTiff creation option
+        imagery_sources = self.meta.pop("imagery_sources", None)
+
         with rasterio.open(path, "w", **self.meta) as dst:
             dst.write(self.data, 1)
+            # Write imagery_sources as a tag instead of a creation option
+            if imagery_sources:
+                dst.update_tags(imagery_sources=imagery_sources)
+
+        # Restore imagery_sources to meta for consistency
+        if imagery_sources:
+            self.meta["imagery_sources"] = imagery_sources
 
     def reproject(self, crs: str) -> None:
         """

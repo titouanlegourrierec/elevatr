@@ -51,9 +51,10 @@ def _merge_rasters(raster_list: list[str]) -> tuple[np.ndarray, dict]:
                 "width": mosaic.shape[2],
                 "transform": out_trans,
                 "nodata": -9999,
-                "imagery_sources": ", ".join(sorted(imagery_sources_set)),
             }
         )
+        # Store imagery_sources separately as it's not a GTiff creation option
+        meta["imagery_sources"] = ", ".join(sorted(imagery_sources_set))
 
     return mosaic, meta
 
@@ -85,6 +86,9 @@ def _clip_bbx(
         Metadata for the clipped raster, including driver, CRS, height, width, and transform.
 
     """
+    # Extract imagery_sources before opening the file, as it's not a valid GTiff creation option
+    imagery_sources = meta.pop("imagery_sources", None)
+
     with rasterio.io.MemoryFile() as memfile, memfile.open(**meta) as dataset:
         dataset.write(data)
 
@@ -98,6 +102,10 @@ def _clip_bbx(
         transform = dataset.window_transform(window)
 
     meta.update(transform=transform, height=data.shape[1], width=data.shape[2])
+
+    # Restore imagery_sources to meta for consistency
+    if imagery_sources:
+        meta["imagery_sources"] = imagery_sources
 
     return data, meta
 
