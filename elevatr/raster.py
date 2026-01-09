@@ -384,8 +384,8 @@ class Raster:
             file_path (str, optional): The path to save the rendered image to, by default None.
             cache_folder (str, optional): The folder to store the cached basemap image, OBJ file, and rendered image,
                 by default settings.cache_folder. NOTE: If you want to change the cache folder, it is recommended to
-                set it with settings.cache_folder = "your_folder"
-            just after the import to standardize the cache folder across the package.
+                set it with settings.cache_folder = "your_folder" just after the import to standardize the cache folder
+                across the package.
             show (bool, optional): Whether to display the rendered image, by default True.
             verbose (bool, optional): Whether to display progress messages, by default True.
 
@@ -398,6 +398,10 @@ class Raster:
         cache_folder = cache_folder or settings.cache_folder
         cache_folder = Path(cache_folder).resolve()
         cache_folder.mkdir(exist_ok=True, parents=True)
+
+        # Reproject to Web Mercator for compatibility with basemaps
+        if self.crs != "EPSG:3857":
+            self.reproject("EPSG:3857")
 
         # Download basemap image
         basemap_hash = hashlib.sha256(
