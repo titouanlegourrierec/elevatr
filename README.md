@@ -34,9 +34,13 @@
   <img src="https://codecov.io/gh/titouanlegourrierec/elevatr/graph/badge.svg?token=zOM5QzMre6"
     alt="Coverage">
   </a>
-  <a href="https://github.com/psf/black">
-  <img src="https://img.shields.io/badge/code%20style-black-000000.svg"
-    alt="Code Style: Black">
+  <a href="https://github.com/astral-sh/ruff">
+  <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"
+    alt="Code Style: Ruff">
+  </a>
+  <a href="https://github.com/astral-sh/ty">
+  <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json"
+    alt="Type Checking: Ty">
   </a>
 </p>
 
