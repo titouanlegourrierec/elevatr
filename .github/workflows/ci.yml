@@ -37,14 +37,14 @@ jobs:
           uv python pin ${{ matrix.python-version }}
           uv sync --all-extras
 
-      - name: Cache pre-commit
+      - name: Cache prek
         uses: actions/cache@v5
         with:
-          path: ~/.cache/precommit/
-          key: pre-commit-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          path: ~/.cache/prek/
+          key: prek-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Run pre-commit hooks
-        run: uv run pre-commit run --all-files --config .pre-commit-config.yaml
+      - name: Run pre-commit checks
+        run: uv run prek run --all-files --config .pre-commit-config.yaml
 
       - name: Build and check package
         run: |

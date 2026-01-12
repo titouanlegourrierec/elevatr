@@ -48,7 +48,7 @@ Documentation = "https://elevatr.readthedocs.io"
 
 [dependency-groups]
 dev = [
-    "pre-commit>=4.5.1",
+    "prek>=0.2.27",
     "pytest-cov>=7.0.0",
     "pytest-xdist>=3.8.0",
     "ruff>=0.14.10",
