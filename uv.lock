@@ -655,17 +655,25 @@ name = "elevatr"
 version = "0.4.0"
 source = { editable = "." }
 dependencies = [
-    { name = "contextily" },
-    { name = "geopandas" },
     { name = "ipykernel" },
+    { name = "matplotlib" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pyproj", version = "3.7.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "pyproj", version = "3.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "pyvista" },
     { name = "rasterio" },
     { name = "requests" },
     { name = "rioxarray", version = "0.19.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "rioxarray", version = "0.20.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "tqdm" },
+]
+
+[package.optional-dependencies]
+3d = [
+    { name = "contextily" },
+    { name = "geopandas" },
+    { name = "pyvista" },
+    { name = "shapely" },
 ]
 
 [package.dev-dependencies]
@@ -687,16 +695,20 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "contextily", specifier = ">=1.7.0" },
-    { name = "geopandas", specifier = ">=1.1.2" },
+    { name = "contextily", marker = "extra == '3d'", specifier = ">=1.7.0" },
+    { name = "geopandas", marker = "extra == '3d'", specifier = ">=1.1.2" },
     { name = "ipykernel", specifier = ">=7.1.0" },
+    { name = "matplotlib", specifier = ">=3.9.0" },
+    { name = "numpy", specifier = ">=2.0.0" },
     { name = "pyproj", specifier = ">=3.7.1" },
-    { name = "pyvista", specifier = ">=0.47.1" },
+    { name = "pyvista", marker = "extra == '3d'", specifier = ">=0.47.1" },
     { name = "rasterio", specifier = ">=1.4.4" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "rioxarray", specifier = ">=0.19.0" },
+    { name = "shapely", marker = "extra == '3d'", specifier = ">=2.0.0" },
     { name = "tqdm", specifier = ">=4.67.3" },
 ]
+provides-extras = ["3d"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -8,17 +8,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import contextily as ctx
-import geopandas
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
-import pyvista as pv
 import rasterio
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from pyproj import CRS
 from rasterio.plot import plotting_extent
-from shapely.geometry import box
 
 from . import settings
 from .raster_operations import _reproject_raster
@@ -334,6 +330,14 @@ class Raster:
             If the raster bounds are not defined.
 
         """
+        try:
+            import contextily as ctx
+            import geopandas
+            from shapely.geometry import box
+        except ImportError as e:
+            msg = "3D visualization requires extra dependencies. Install them with: pip install elevatr[3d]"
+            raise ImportError(msg) from e
+
         basemap_bounds = self.bounds
         if basemap_bounds is None:
             msg = "Raster bounds are not defined. Cannot download basemap."
@@ -470,6 +474,12 @@ class Raster:
         if not Path(render_path).exists():
             if verbose:
                 logger.info("Rendering 3D model...")
+
+            try:
+                import pyvista as pv
+            except ImportError as e:
+                msg = "3D visualization requires extra dependencies. Install them with: pip install elevatr[3d]"
+                raise ImportError(msg) from e
 
             mesh = pv.read(obj_path)
             texture = pv.read_texture(basemap_path)

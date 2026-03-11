@@ -14,11 +14,10 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "contextily>=1.7.0",
-    "geopandas>=1.1.2",
     "ipykernel>=7.1.0",
+    "matplotlib>=3.9.0",
+    "numpy>=2.0.0",
     "pyproj>=3.7.1",
-    "pyvista>=0.47.1",
     "rasterio>=1.4.4",
     "requests>=2.32.5",
     "rioxarray>=0.19.0",
@@ -39,6 +38,14 @@ classifiers = [
     "Topic :: Scientific/Engineering :: GIS",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Scientific/Engineering :: Visualization",
+]
+
+[project.optional-dependencies]
+3d = [
+    "contextily>=1.7.0",
+    "geopandas>=1.1.2",
+    "pyvista>=0.47.1",
+    "shapely>=2.0.0",
 ]
 
 [project.urls]
@@ -71,6 +78,7 @@ ignore = [
     "COM812",   # Checks for the absence of trailing commas. (conflict with the formatter)
     "D203",     # Checks for docstrings on class definitions that are not preceded by a blank line. (conflict with D211)
     "D212",     # Checks for docstring summary lines that are not positioned on the first physical line of the docstring. (conflict with D213)
+    "PLC0415",  # Allows imports outside top-level (needed for optional lazy imports of 3d dependencies)
 ]
 mccabe.max-complexity = 20
 pylint.max-args = 20
