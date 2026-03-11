@@ -13,9 +13,20 @@ repos:
       - id: requirements-txt-fixer
       - id: trailing-whitespace
 
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.25
+    hooks:
+      - id: validate-pyproject
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.5
     hooks:
       - id: ruff-check
         args: [ --fix ]
       - id: ruff-format
+
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 1.0.0
+    hooks:
+      - id: mdformat
+        language: python

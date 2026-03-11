@@ -1,6 +1,9 @@
 <!---------------------------------------------->
+
 <a name="readme-top"></a>
+
 <!---------------------------------------------->
+
 <h1 align="center">
   <br>
   <a href="https://github.com/titouanlegourrierec/elevatr"><img src="https://raw.githubusercontent.com/titouanlegourrierec/elevatr/main/assets/elv.png" alt="elevatr" width="120"></a>
@@ -86,6 +89,7 @@ zoom = 6
 # Access the elevation data
 raster = elv.get_elev_raster(locations=bbx, zoom=zoom)
 ```
+
 > **📝 Note:**
 > Please choose the zoom level incrementally, a high level of zoom on a large area can take a lot of time and memory.
 
@@ -94,7 +98,9 @@ raster = elv.get_elev_raster(locations=bbx, zoom=zoom)
 ```python
 raster.show(cmap='terrain', clip_zero=True)
 ```
+
 #### 🌍 Example output:
+
 <div style="text-align: center;">
     <img src="https://raw.githubusercontent.com/titouanlegourrierec/elevatr/main/assets/raster_example.png" alt="alt text" width="50%">
 </div>
@@ -104,6 +110,7 @@ raster.show(cmap='terrain', clip_zero=True)
 ```python
 raster.to_tif("elevation.tif")
 ```
+
 Save your elevation data to a TIFF file for further use! 🗂️✨
 
 <!---------------------------------------------->
@@ -132,16 +139,16 @@ The underlying data sources are a mix of:
 
 | Zoom | Ocean | Land |
 |------|-------|------|
-| **0**  | `ETOPO1` | `ETOPO1` |
-| **1**  | `ETOPO1` | `ETOPO1` |
-| **2**  | `ETOPO1` | `ETOPO1` |
-| **3**  | `ETOPO1` | `ETOPO1` |
-| **4**  | `ETOPO1` | `GMTED` |
-| **5**  | `ETOPO1` | `GMTED` |
-| **6**  | `ETOPO1` | `GMTED` |
-| **7**  | `ETOPO1` | `SRTM`, `NRCAN` in Canada, with `GMTED` in high latitudes above 60° |
-| **8**  | `ETOPO1` | `SRTM`, `NRCAN` in Canada, with `GMTED` in high latitudes above 60° |
-| **9**  | `ETOPO1` | `SRTM`, `NRCAN` in Canada, `EUDEM` in Europe, with `GMTED` in high latitudes above 60° |
+| **0** | `ETOPO1` | `ETOPO1` |
+| **1** | `ETOPO1` | `ETOPO1` |
+| **2** | `ETOPO1` | `ETOPO1` |
+| **3** | `ETOPO1` | `ETOPO1` |
+| **4** | `ETOPO1` | `GMTED` |
+| **5** | `ETOPO1` | `GMTED` |
+| **6** | `ETOPO1` | `GMTED` |
+| **7** | `ETOPO1` | `SRTM`, `NRCAN` in Canada, with `GMTED` in high latitudes above 60° |
+| **8** | `ETOPO1` | `SRTM`, `NRCAN` in Canada, with `GMTED` in high latitudes above 60° |
+| **9** | `ETOPO1` | `SRTM`, `NRCAN` in Canada, `EUDEM` in Europe, with `GMTED` in high latitudes above 60° |
 | **10** | `ETOPO1`, `NED Topobathy` in California | `SRTM`, `data.gov.at` in Austria, `NRCAN` in Canada, `SRTM`, `NED/3DEP` 1/3 arcsec, `data.gov.uk` in United Kingdom, `INEGI` in Mexico, `ArcticDEM` in latitudes above 60°, `LINZ` in New Zealand, `Kartverket` in Norway |
 | **11** | `ETOPO1`, `NED Topobathy` in California | `SRTM`, `data.gov.at` in Austria, `NRCAN` in Canada, `SRTM`, `NED/3DEP` 1/3 arcsec and 1/9 arcsec, `data.gov.uk` in United Kingdom, `INEGI` in Mexico, `ArcticDEM` in latitudes above 60°, `LINZ` in New Zealand, `Kartverket` in Norway |
 | **12** | `ETOPO1`, `NED Topobathy` in California | `SRTM`, `data.gov.at` in Austria, `NRCAN` in Canada, `SRTM`, `NED/3DEP` 1/3 arcsec and 1/9 arcsec, `data.gov.uk` in United Kingdom, `INEGI` in Mexico, `ArcticDEM` in latitudes above 60°, `LINZ` in New Zealand, `Kartverket` in Norway |
@@ -163,11 +170,11 @@ Elevatr is licensed under the **MIT License**. This means you are free to use, m
 This package is inspired by the great [`elevatr`](https://github.com/USEPA/elevatr) package for the R language. It was this package that inspired me to create a similar package to ease access to this data for Python users.
 
 <!---------------------------------------------->
+
 <p align="right"><a href="#readme-top">back to top</a></p>
 <!---------------------------------------------->
 
+______________________________________________________________________
 
----
-
-> GitHub [@titouanlegourrierec](https://github.com/titouanlegourrierec) &nbsp;&middot;&nbsp;
+> GitHub [@titouanlegourrierec](https://github.com/titouanlegourrierec)  ·
 > Email [titouanlegourrierec@icloud.com](mailto:titouanlegourrierec@icloud.com)
