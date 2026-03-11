@@ -137,6 +137,37 @@ Accessing the Raster metadata:
 
 >>> 'etopo1, gmted'
 
+Visualizing the Raster in 3D
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Want to explore your elevation data in three dimensions? Here's how to render a stunning 3D view:
+
+.. code-block:: python
+
+    raster.show_3d(
+        solid=True,
+        light_intensity=0.5,
+        transparent_background=True,
+        zscale=40,
+        phi=30,
+        theta=180,
+        file_path="elevation.png",
+    )
+
+Here’s an example of what your 3D visualization might look like:
+
+.. image:: _static/3d_raster_example.png
+    :width: 400
+    :align: center
+
+Closing the Session
+~~~~~~~~~~~~~~~~~~~
+
+Done working with your raster? Release the resources properly:
+
+.. code-block:: python
+
+    raster.quit()
 ----
 
 That’s it! You’re ready to start exploring elevation data with elevatr. Whether you’re visualizing, analyzing, or saving, this library has got you covered. Happy mapping! 🌍⭐

@@ -105,6 +105,28 @@ raster.show(cmap='terrain', clip_zero=True)
     <img src="https://raw.githubusercontent.com/titouanlegourrierec/elevatr/main/assets/raster_example.png" alt="alt text" width="50%">
 </div>
 
+### 🏔️ Visualize in 3D
+
+```python
+raster.show_3d(
+    solid=True,
+    light_intensity=0.5,
+    transparent_background=True,
+    zscale=40,
+    phi=30,
+    theta=180,
+    file_path="elevation.png",
+)
+```
+
+Render a stunning 3D view of your elevation data! 🌐✨
+
+#### 🌍 Example output:
+
+<div style="text-align: center;">
+    <img src="https://raw.githubusercontent.com/titouanlegourrierec/elevatr/main/assets/3d_raster_example.png" alt="alt text" width="50%">
+</div>
+
 ### 💾 Save to TIFF File
 
 ```python
