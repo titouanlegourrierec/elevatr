@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "elevatr"
-version = "0.4.0"
+version = "0.5.0"
 description = "A Python package to simplify downloading and processing elevation data."
 authors = [
     { name = "Titouan Le Gourrierec", email = "titouanlegourrierec@icloud.com" }
@@ -14,9 +14,8 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "ipykernel>=7.1.0",
-    "matplotlib>=3.9.0",
-    "numpy>=2.0.0",
+    "matplotlib>=3.10.8",
+    "numpy>=2.2.6",
     "pyproj>=3.7.1",
     "rasterio>=1.4.4",
     "requests>=2.32.5",
@@ -43,9 +42,9 @@ classifiers = [
 [project.optional-dependencies]
 3d = [
     "contextily>=1.7.0",
-    "geopandas>=1.1.2",
+    "geopandas>=1.1.3",
     "pyvista>=0.47.1",
-    "shapely>=2.0.0",
+    "shapely>=2.1.2",
 ]
 
 [project.urls]
