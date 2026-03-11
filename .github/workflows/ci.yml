@@ -23,10 +23,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v7.4.0
         with:
           cache-dependency-glob: pyproject.toml
           enable-cache: true
@@ -38,7 +38,7 @@ jobs:
           uv sync --all-extras
 
       - name: Cache prek
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.3
         with:
           path: ~/.cache/prek/
           key: prek-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -55,7 +55,7 @@ jobs:
         run: uv run pytest -n auto -s --maxfail=1 --disable-warnings --cov=elevatr --cov-report=xml
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v5.5.2
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}

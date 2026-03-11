@@ -18,11 +18,11 @@ dependencies = [
     "geopandas>=1.1.2",
     "ipykernel>=7.1.0",
     "pyproj>=3.7.1",
-    "pyvista>=0.46.4",
+    "pyvista>=0.47.1",
     "rasterio>=1.4.4",
     "requests>=2.32.5",
     "rioxarray>=0.19.0",
-    "tqdm>=4.67.1",
+    "tqdm>=4.67.3",
 ]
 
 classifiers = [
@@ -48,12 +48,12 @@ Documentation = "https://elevatr.readthedocs.io"
 
 [dependency-groups]
 dev = [
-    "prek>=0.2.27",
+    "prek>=0.3.5",
     "pytest-cov>=7.0.0",
     "pytest-xdist>=3.8.0",
-    "ruff>=0.14.10",
+    "ruff>=0.15.5",
     "twine>=6.2.0",
-    "ty>=0.0.7",
+    "ty>=0.0.21",
 ]
 docs = [
     "furo>=2025.12.19",
