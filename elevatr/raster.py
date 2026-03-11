@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import contextily as ctx
-import geopandas as gpd
+import geopandas
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -328,11 +328,19 @@ class Raster:
             The zoom level of the basemap image, by default 'auto'. Big zoom levels will result in
             higher resolution images.
 
+        Raises
+        ------
+        ValueError
+            If the raster bounds are not defined.
+
         """
         basemap_bounds = self.bounds
+        if basemap_bounds is None:
+            msg = "Raster bounds are not defined. Cannot download basemap."
+            raise ValueError(msg)
         basemap_bounds = box(*basemap_bounds)
 
-        gdf = gpd.GeoDataFrame({"geometry": [basemap_bounds]}, crs="EPSG:3857")
+        gdf = geopandas.GeoDataFrame({"geometry": [basemap_bounds]}, crs="EPSG:3857")
         bounds = gdf.bounds
 
         fig, ax = plt.subplots()
